@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "$(id -u)" -ne 0 ]; then
-  echo "the script must be run as root"
+  echo "The script must be run as root"
   exit 1
 fi
 
