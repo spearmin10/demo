@@ -24,7 +24,9 @@ curl -s -L https://github.com/spearmin10/demo/blob/main/ec2-tsrain/install.sh?ra
 
 The instance will reboot after the installation is complete, and the services will start automatically.
 
-### 3. Access the services
+### 3. Open ports and access the services
+
+Configure the inbound rules of the security group associated with your instance to allow access to the service ports. The ports used by the services are listed below, along with their access methods.
 
 - TSRAIN Web Mail
   - https://&lt;your public ip&gt;/ or http://&lt;your public ip&gt;/
@@ -49,11 +51,11 @@ The instance will reboot after the installation is complete, and the services wi
 
 Use your own server certificate
 ----------
-### 1. Replace these certificates and private keys
-  - Root CA
-    - /var/opt/tsrain/pki/tsrain-ca.cer.pem
-  - Server Cert & Key
-    - /var/opt/tsrain/pki/tsrain-svc.cer.pem
+### 1. Replace the certificate and private key
+  - Server Certificate with intermediate and root CA certs
+    - /var/opt/tsrain/pki/tsrain-svc.chain.pem
+      (This file should contain the server certificate, followed by any intermediate CA certificates, and then the root CA certificate, in that specific order.)
+  - Server private key
     - /var/opt/tsrain/pki/tsrain-svc.key.pem
 
 ### 2. Restart the services.
