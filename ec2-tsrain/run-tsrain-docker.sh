@@ -1,0 +1,80 @@
+#!/bin/sh
+
+usage_exit() {
+  echo "Usage: $0 [-n container-suffix] [-r] [-m] [-a] [-h]" 1>&2
+  exit 1
+}
+
+cd `dirname $0`
+
+CONTAINER_NAME=tsrain
+CONTAINER_SUFFIX=
+RESTART_SERVICE=0
+MAILBOX_PASSWORD=
+RAINLOOP_DEFAULT_ADMIN_PASSWORD=
+while getopts n:rh OPT
+do
+  case $OPT in
+    n)  CONTAINER_SUFFIX=$OPTARG
+        ;;
+    r)  RESTART_SERVICE=1
+        ;;
+    m)  read -sp "TSRAIN MailBox Password: " MAILBOX_PASSWORD
+        ;;
+    m)  read -sp "TSRAIN Admin Password: " RAINLOOP_DEFAULT_ADMIN_PASSWORD
+        ;;
+    h)  usage_exit
+        ;;
+    \?) usage_exit
+        ;;
+  esac
+done
+
+LATEST_TAG=`curl -s https://registry.hub.docker.com/v2/repositories/spearmint/tsrain/tags | jq -r '.results[].name' | sort -r --version-sort | head -1`
+
+if [ ! -z "${CONTAINER_SUFFIX}" ]; then
+  CONTAINER_NAME="${CONTAINER_NAME}-${CONTAINER_SUFFIX}"
+fi
+
+if [ -z "${LATEST_TAG}" ]; then
+  TSRAIN_IMAGE=`docker images --format "{{.Repository}}:{{.Tag}}" | grep -E "^spearmint/tsrain:" | sort -r | head -1`
+else
+  TSRAIN_IMAGE=spearmint/tsrain:${LATEST_TAG}
+fi
+
+TSRAIN_CONTAINER_ID=`docker container ls -q -f "name=${CONTAINER_NAME}"`
+if [ -z "${TSRAIN_CONTAINER_ID}" ]; then
+  mkdir -p "/var/opt/tsrain/services/${CONTAINER_NAME}"
+
+  CREDS_PATH="/var/opt/tsrain/services/${CONTAINER_NAME}/credentials.json"
+  if [ ! -f ${CREDS_PATH} -a ! -z "${MAILBOX_PASSWORD}" ]; then
+    jq --arg password "${MAILBOX_PASSWORD}" -n '."*".password = $password' > ${CREDS_PATH}
+  fi
+  
+  export RAINLOOP_DEFAULT_ADMIN_PASSWORD
+  TSRAIN_CONTAINER_ID=`docker run --rm --memory 128m --memory-swap 1g -d -p "25:25" -p "80:80" -p "143:143" \
+    --name "${CONTAINER_NAME}" \
+    -e RAINLOOP_DEFAULT_ADMIN_PASSWORD \
+    --mount "type=bind,source=${CREDS_PATH},target=/var/opt/testserv/credentials.json" \
+    "${TSRAIN_IMAGE}"`
+
+  if [ $? -eq 0 -a ! -z "${TSRAIN_CONTAINER_ID}" ]; then
+    echo "container ${CONTAINER_NAME} has been started - ${TSRAIN_CONTAINER_ID}"
+  else
+    echo "failed to start the container - ${CONTAINER_NAME}."
+    exit 1
+  fi
+elif [ ${RESTART_SERVICE} -eq 1 ]; then
+  docker container restart ${TSRAIN_CONTAINER_ID}
+  if [ $? -eq 0 ]; then
+    echo "container ${CONTAINER_NAME} has been restarted."
+  else
+    echo "failed to restart the container - ${CONTAINER_NAME}."
+    exit 1
+  fi
+else
+  echo "container ${CONTAINER_NAME} is already active"
+  exit 1
+fi
+
+exit 0
