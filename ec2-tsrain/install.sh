@@ -93,21 +93,18 @@ cat << __EOT__ > /etc/stunnel/stunnel.conf
 [tsrain-web]
 accept  = 443
 connect = 80
-CAFile = ${TSRAIN_PKI_DIR}/tsrain-ca.cer.pem
 cert = ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem
 key = ${TSRAIN_PKI_DIR}/tsrain-svc.key.pem
 
 [tsrain-smtps]
 accept  = 465
 connect = 25
-CAFile = ${TSRAIN_PKI_DIR}/tsrain-ca.cer.pem
 cert = ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem
 key = ${TSRAIN_PKI_DIR}/tsrain-svc.key.pem
 
 [tsrain-imap4-tls]
 accept  = 993
 connect = 143
-CAFile = ${TSRAIN_PKI_DIR}/tsrain-ca.cer.pem
 cert = ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem
 key = ${TSRAIN_PKI_DIR}/tsrain-svc.key.pem
 
