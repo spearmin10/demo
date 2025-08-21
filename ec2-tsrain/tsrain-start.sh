@@ -2,12 +2,12 @@
 
 TSRAIN_HOME=/opt/tsrain
 CONTAINER_NAME=tsrain
-SERVICE_CID_PATH=/var/run/$SERVICE_NAME.cid
+CONTAINER_CID_PATH=/var/run/$CONTAINER_NAME.cid
 
-if [ -f $SERVICE_CID_PATH ]; then
+if [ -f $CONTAINER_CID_PATH ]; then
   CONTAINER_ID=`docker container ls -q -f "name=${CONTAINER_NAME}"`
   if [ ! -z "${CONTAINER_ID}" ]; then
-    echo $SERVICE_NAME is already running.
+    echo $CONTAINER_NAME is already running.
     exit 1
   fi
 fi
@@ -18,5 +18,5 @@ if [ $? -eq 0 ]; then
   if [ -z "${CONTAINER_ID}" ]; then
     exit 1
   fi
-  echo ${CONTAINER_ID} > ${SERVICE_CID_PATH}
+  echo ${CONTAINER_ID} > ${CONTAINER_CID_PATH}
 fi
