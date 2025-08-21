@@ -12,7 +12,7 @@ if [ -f $CONTAINER_CID_PATH ]; then
   fi
 fi
 
-$TSRAIN_HOME/bin/run-tsrain-docker.sh
+$TSRAIN_HOME/bin/tsrain-docker-start.sh
 if [ $? -eq 0 ]; then
   CONTAINER_ID=`docker container ls -q -f "name=${CONTAINER_NAME}"`
   if [ -z "${CONTAINER_ID}" ]; then
