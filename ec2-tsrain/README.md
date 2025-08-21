@@ -49,7 +49,13 @@ The instance will reboot after the installation is complete, and the services wi
 
 Use your own server certificate
 ----------
+### 1. Replace these certificates and private keys
+  - Root CA
+    - /var/opt/tsrain/pki/tsrain-ca.cer.pem
+  - Server Cert & Key
+    - /var/opt/tsrain/pki/tsrain-svc.cer.pem
+    - /var/opt/tsrain/pki/tsrain-svc.key.pem
 
-
- - systemctl restart tsrain
- - systemctl restart stunnel
+### 2. Restart the services.
+  - sudo systemctl restart tsrain
+  - sudo systemctl restart stunnel
