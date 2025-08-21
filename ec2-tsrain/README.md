@@ -54,7 +54,7 @@ Use your own server certificate
 ### 1. Replace the certificate and private key
   - Server Certificate with intermediate and root CA certs
     - /var/opt/tsrain/pki/tsrain-svc.chain.pem
-      (This file should contain the server certificate, followed by any intermediate CA certificates, and then the root CA certificate, in that specific order.)
+      - (This file should contain the server certificate, followed by any intermediate CA certificates, and then the root CA certificate, in that specific order.)
   - Server private key
     - /var/opt/tsrain/pki/tsrain-svc.key.pem
 
