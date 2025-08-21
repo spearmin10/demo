@@ -61,7 +61,7 @@ __EOT__
 systemctl enable tsrain
 
 ### Setup SSL Frontend
-dnf install stunnel
+dnf install -y stunnel
 
 TSRAIN_PKI_DIR=/var/opt/tsrain/pki
 mkdir -p ${TSRAIN_PKI_DIR}
