@@ -87,25 +87,27 @@ openssl req -new -nodes -x509 \
  -CAkey ${TSRAIN_PKI_DIR}/tsrain-ca.key.pem \
  -out ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem
 
+cat ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem ${TSRAIN_PKI_DIR}/tsrain-ca.cer.pem > ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
+
 chmod 600 ${TSRAIN_PKI_DIR}/*.key.pem
 
 cat << __EOT__ > /etc/stunnel/stunnel.conf
 [tsrain-web]
 accept  = 443
 connect = 80
-cert = ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem
+cert = ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
 key = ${TSRAIN_PKI_DIR}/tsrain-svc.key.pem
 
 [tsrain-smtps]
 accept  = 465
 connect = 25
-cert = ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem
+cert = ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
 key = ${TSRAIN_PKI_DIR}/tsrain-svc.key.pem
 
 [tsrain-imap4-tls]
 accept  = 993
 connect = 143
-cert = ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem
+cert = ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
 key = ${TSRAIN_PKI_DIR}/tsrain-svc.key.pem
 
 __EOT__
