@@ -60,7 +60,7 @@ if [ -z "${TSRAIN_CONTAINER_ID}" ]; then
   fi
 
   export RAINLOOP_DEFAULT_ADMIN_PASSWORD
-  TSRAIN_CONTAINER_ID=`docker run --rm --memory 128m --memory-swap 1g -d -p "25:25" -p "80:80" -p "143:143" \
+  TSRAIN_CONTAINER_ID=`docker run --rm --memory 384m --memory-swap 2g -d -p "25:25" -p "80:80" -p "143:143" \
     --name "${CONTAINER_NAME}" \
     -e RAINLOOP_DEFAULT_ADMIN_PASSWORD \
     --mount "type=bind,source=${CREDS_PATH},target=/var/opt/testserv/credentials.json" \
