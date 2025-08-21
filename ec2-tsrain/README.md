@@ -58,6 +58,5 @@ Use your own server certificate
   - Server private key
     - /var/opt/tsrain/pki/tsrain-svc.key.pem
 
-### 2. Restart the services.
-  - sudo systemctl restart tsrain
+### 2. Restart the TLS transport service.
   - sudo systemctl restart stunnel
