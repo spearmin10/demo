@@ -13,3 +13,10 @@ if [ -f $SERVICE_CID_PATH ]; then
 fi
 
 $TSRAIN_HOME/bin/run-tsrain-docker.sh
+if [ $? -eq 0 ]; then
+  CONTAINER_ID=`docker container ls -q -f "name=${CONTAINER_NAME}"`
+  if [ -z "${CONTAINER_ID}" ]; then
+    exit 1
+  fi
+  echo ${CONTAINER_ID} > ${SERVICE_CID_PATH}
+fi

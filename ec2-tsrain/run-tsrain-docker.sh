@@ -10,9 +10,9 @@ cd `dirname $0`
 CONTAINER_NAME=tsrain
 CONTAINER_SUFFIX=
 RESTART_SERVICE=0
-MAILBOX_PASSWORD=
+MAILBOX_PASSWORD=Password123!
 RAINLOOP_DEFAULT_ADMIN_PASSWORD=
-while getopts n:rh OPT
+while getopts n:m:a:rh OPT
 do
   case $OPT in
     n)  CONTAINER_SUFFIX=$OPTARG
@@ -21,7 +21,7 @@ do
         ;;
     m)  read -sp "TSRAIN MailBox Password: " MAILBOX_PASSWORD
         ;;
-    m)  read -sp "TSRAIN Admin Password: " RAINLOOP_DEFAULT_ADMIN_PASSWORD
+    a)  read -sp "TSRAIN Admin Password: " RAINLOOP_DEFAULT_ADMIN_PASSWORD
         ;;
     h)  usage_exit
         ;;
@@ -47,10 +47,18 @@ if [ -z "${TSRAIN_CONTAINER_ID}" ]; then
   mkdir -p "/var/opt/tsrain/services/${CONTAINER_NAME}"
 
   CREDS_PATH="/var/opt/tsrain/services/${CONTAINER_NAME}/credentials.json"
-  if [ ! -f ${CREDS_PATH} -a ! -z "${MAILBOX_PASSWORD}" ]; then
+  if [ ! -f ${CREDS_PATH} ]; then
     jq --arg password "${MAILBOX_PASSWORD}" -n '."*".password = $password' > ${CREDS_PATH}
   fi
-  
+  chmod 600 ${CREDS_PATH}
+
+  if [ -z "${RAINLOOP_DEFAULT_ADMIN_PASSWORD}" ]; then
+    RAINLOOP_DEFAULT_ADMIN_PASSWORD=`openssl rand -base64 24`
+    RAINLOOP_DEFAULT_ADMIN_PASSWORD_PATH="/var/opt/tsrain/services/${CONTAINER_NAME}/rainloop-default-admin-password.txt"
+    echo ${RAINLOOP_DEFAULT_ADMIN_PASSWORD} > ${RAINLOOP_DEFAULT_ADMIN_PASSWORD_PATH}
+    chmod 600 ${RAINLOOP_DEFAULT_ADMIN_PASSWORD_PATH}
+  fi
+
   export RAINLOOP_DEFAULT_ADMIN_PASSWORD
   TSRAIN_CONTAINER_ID=`docker run --rm --memory 128m --memory-swap 1g -d -p "25:25" -p "80:80" -p "143:143" \
     --name "${CONTAINER_NAME}" \
