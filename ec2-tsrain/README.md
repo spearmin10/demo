@@ -60,3 +60,20 @@ Use your own server certificate
 
 ### 2. Restart the TLS transport service.
   - sudo systemctl restart stunnel
+
+
+Email Users and password
+----------
+All mailbox users in the TSRAIN instance share a single common password, and any password change made by one user is automatically applied to all users. When specifying a mailbox email address for login, you can use a wildcard address to access all mailboxes matching the pattern. The wildcard must include the `@` symbol to separate the user and domain parts; for example, `*@*` grants access to all mailboxes. Additionally, the special account `*` allows access to all mailboxes without specifying an email address.
+
+
+Licensing
+----------
+### Webmail Frontend
+TSRAIN uses [RainLoop Webmail (Community Edition)](https://www.rainloop.net/) as its webmail frontend.  
+RainLoop Webmail (Community Edition) is released under the [GNU Affero General Public License, Version 3 (AGPLv3)](http://www.gnu.org/licenses/agpl-3.0.html).  
+For further details about licensing and disclaimers, please refer to the official RainLoop website.
+
+
+
+
