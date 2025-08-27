@@ -53,7 +53,7 @@ Description = TSRAIN Web Mail
 ExecStart = /opt/tsrain/bin/tsrain-start.sh
 ExecStop = /opt/tsrain/bin/tsrain-stop.sh
 Restart = always
-Type = simple
+Type = forking
 
 [Install]
 WantedBy = multi-user.target
@@ -62,7 +62,7 @@ __EOT__
 systemctl enable tsrain
 
 ### Setup SSL Frontend
-TSRAIN_PKI_DIR=/var/opt/tsrain/pki
+TSRAIN_PKI_DIR=/opt/tsrain/pki
 mkdir -p ${TSRAIN_PKI_DIR}
 
 openssl req \
