@@ -62,7 +62,8 @@ if [ -z "${TSRAIN_CONTAINER_ID}" ]; then
   fi
 
   export RAINLOOP_DEFAULT_ADMIN_PASSWORD
-  TSRAIN_CONTAINER_ID=`docker container run --rm --memory 384m --memory-swap 2g -d -p "25:25" -p "80:80" -p "143:143" \
+  TSRAIN_CONTAINER_ID=`docker container run --rm --memory 384m --memory-swap 2g -d \
+    -p "25:25" -p "80:80" -p "143:143" -p "465:465" -p "993:993" \
     --name "${CONTAINER_NAME}" \
     -e RAINLOOP_DEFAULT_ADMIN_PASSWORD \
     --mount "type=bind,source=${PKI_PATH},target=/usr/local/etc/pki" \
