@@ -15,17 +15,13 @@ systemctl restart docker.service
 cat << '__EOT__' > /etc/rc.d/rc.local
 #!/bin/sh
 
-###
 ## Create and enable a swap
-###
 SWAPFILENAME=/swap.img
 SIZE=2g
 rm -f $SWAPFILENAME
 fallocate -l $SIZE $SWAPFILENAME && mkswap $SWAPFILENAME && swapon $SWAPFILENAME
 
-###
 ## Enable zram
-###
 modprobe zram
 echo lz4 > /sys/block/zram0/comp_algorithm
 echo 2048M > /sys/block/zram0/disksize
@@ -66,8 +62,6 @@ __EOT__
 systemctl enable tsrain
 
 ### Setup SSL Frontend
-dnf install -y stunnel
-
 TSRAIN_PKI_DIR=/var/opt/tsrain/pki
 mkdir -p ${TSRAIN_PKI_DIR}
 
@@ -98,33 +92,7 @@ openssl req \
 
 cat ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem ${TSRAIN_PKI_DIR}/tsrain-root.cer.pem > ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
 
-chmod 600 ${TSRAIN_PKI_DIR}/*.key.pem
-
-cat << __EOT__ > /etc/stunnel/stunnel.conf
-[tsrain-web]
-accept  = 443
-connect = 80
-cert = ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
-key = ${TSRAIN_PKI_DIR}/tsrain-svc.key.pem
-
-[tsrain-smtps]
-accept  = 465
-connect = 25
-cert = ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
-key = ${TSRAIN_PKI_DIR}/tsrain-svc.key.pem
-
-[tsrain-imap4-tls]
-accept  = 993
-connect = 143
-cert = ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
-key = ${TSRAIN_PKI_DIR}/tsrain-svc.key.pem
-
-__EOT__
-
-systemctl enable stunnel
-
-systemctl start tsrain
-systemctl start stunnel
+# chmod 600 ${TSRAIN_PKI_DIR}/*.key.pem
 
 # Apply zram settings
 echo "*** The system will reboot in 10 seconds. ***"
