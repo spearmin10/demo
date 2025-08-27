@@ -53,7 +53,7 @@ Description = TSRAIN Web Mail
 ExecStart = /opt/tsrain/bin/tsrain-start.sh
 ExecStop = /opt/tsrain/bin/tsrain-stop.sh
 Restart = always
-Type = forking
+Type = simple
 
 [Install]
 WantedBy = multi-user.target
