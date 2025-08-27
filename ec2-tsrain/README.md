@@ -34,16 +34,18 @@ Configure the inbound rules of the security group associated with your instance 
     - Initial Password: Password123!
   - https://&lt;your public ip&gt;/?admin or http://&lt;your public ip&gt;/?admin
     - User ID: admin
-    - Password: (See /var/opt/tsrain/services/tsrain/rainloop-default-admin-password.txt)
+    - Password: (See /opt/tsrain/services/tsrain/rainloop-default-admin-password.txt)
 
 - TSRAIN SMTP Service
   - Port: 25
+  - STARTTLS is supported
 
 - TSRAIN SMTP Service (TLS)
   - Port: 465
 
 - TSRAIN IMAP4 Service
   - Port: 143
+  - STARTTLS is supported
 
 - TSRAIN IMAP4 Service (TLS)
   - Port: 993
@@ -53,10 +55,10 @@ Use your own server certificate
 ----------
 ### 1. Replace the certificate and private key
   - Server Certificate with intermediate and root CA certs
-    - /var/opt/tsrain/pki/tsrain-svc.chain.pem
+    - /opt/tsrain/pki/tsrain-svc.chain.pem
       - (This file should contain the server certificate, followed by any intermediate CA certificates, and then the root CA certificate, in that specific order.)
   - Server private key
-    - /var/opt/tsrain/pki/tsrain-svc.key.pem
+    - /opt/tsrain/pki/tsrain-svc.key.pem
 
 ### 2. Restart the TLS transport service.
   - sudo systemctl restart stunnel
