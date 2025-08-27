@@ -1,20 +1,11 @@
 #!/bin/sh
 
 CONTAINER_NAME=tsrain
-CONTAINER_CID_PATH=/var/run/$CONTAINER_NAME.cid
 TSRAIN_HOME=/opt/tsrain
 TSRAIN_PKI_PATH=${TSRAIN_HOME}/pki
 TSRAIN_CREDS_PATH="/var/opt/tsrain/services/${CONTAINER_NAME}/credentials.json"
 TSRAIN_MAILBOX_PASSWORD=Password123!
 RAINLOOP_DEFAULT_ADMIN_PASSWORD_PATH="/var/opt/tsrain/services/${CONTAINER_NAME}/rainloop-default-admin-password.txt"
-
-if [ -f $CONTAINER_CID_PATH ]; then
-  CONTAINER_ID=`docker container ls -q -f "name=${CONTAINER_NAME}"`
-  if [ ! -z "${CONTAINER_ID}" ]; then
-    echo $CONTAINER_NAME is already running.
-    exit 1
-  fi
-fi
 
 cd `dirname $0`
 
@@ -50,7 +41,6 @@ if [ -z "${TSRAIN_CONTAINER_ID}" ]; then
 
   if [ $? -eq 0 -a ! -z "${TSRAIN_CONTAINER_ID}" ]; then
     echo "container ${CONTAINER_NAME} has been started - ${TSRAIN_CONTAINER_ID}"
-    echo ${TSRAIN_CONTAINER_ID} > ${CONTAINER_CID_PATH}
   else
     echo "failed to start the container - ${CONTAINER_NAME}."
     exit 1
