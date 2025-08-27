@@ -12,6 +12,8 @@ CONTAINER_SUFFIX=
 RESTART_SERVICE=0
 MAILBOX_PASSWORD=Password123!
 RAINLOOP_DEFAULT_ADMIN_PASSWORD=
+PKI_PATH=/var/opt/tsrain/pki
+
 while getopts n:m:a:rh OPT
 do
   case $OPT in
@@ -35,6 +37,7 @@ LATEST_TAG=`curl -s https://registry.hub.docker.com/v2/repositories/spearmint/ts
 if [ ! -z "${CONTAINER_SUFFIX}" ]; then
   CONTAINER_NAME="${CONTAINER_NAME}-${CONTAINER_SUFFIX}"
 fi
+CREDS_PATH="/var/opt/tsrain/services/${CONTAINER_NAME}/credentials.json"
 
 if [ -z "${LATEST_TAG}" ]; then
   TSRAIN_IMAGE=`docker images --format "{{.Repository}}:{{.Tag}}" | grep -E "^spearmint/tsrain:" | sort -r | head -1`
@@ -44,9 +47,8 @@ fi
 
 TSRAIN_CONTAINER_ID=`docker container ls -q -f "name=${CONTAINER_NAME}"`
 if [ -z "${TSRAIN_CONTAINER_ID}" ]; then
-  mkdir -p "/var/opt/tsrain/services/${CONTAINER_NAME}"
+  mkdir -p `dirname "${CREDS_PATH}"`
 
-  CREDS_PATH="/var/opt/tsrain/services/${CONTAINER_NAME}/credentials.json"
   if [ ! -f ${CREDS_PATH} ]; then
     jq --arg password "${MAILBOX_PASSWORD}" -n '."*".password = $password' > ${CREDS_PATH}
   fi
@@ -63,6 +65,7 @@ if [ -z "${TSRAIN_CONTAINER_ID}" ]; then
   TSRAIN_CONTAINER_ID=`docker container run --rm --memory 384m --memory-swap 2g -d -p "25:25" -p "80:80" -p "143:143" \
     --name "${CONTAINER_NAME}" \
     -e RAINLOOP_DEFAULT_ADMIN_PASSWORD \
+    --mount "type=bind,source=${PKI_PATH},target=/usr/local/etc/pki" \
     --mount "type=bind,source=${CREDS_PATH},target=/var/opt/testserv/credentials.json" \
     "${TSRAIN_IMAGE}"`
 
