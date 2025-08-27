@@ -37,7 +37,7 @@ mkdir -p /opt/tsrain/bin
 cd /opt/tsrain/bin
 for file in tsrain-start.sh tsrain-stop.sh
 do
-  curl -s -L -J -O https://github.com/spearmin10/demo/blob/main/ec2-tsrain/${file}?raw=true
+  curl -s -L -J -O -C - https://github.com/spearmin10/demo/blob/main/ec2-tsrain/${file}?raw=true
   if [ $? -ne 0 ]; then
     echo "Failed to download ${file}."
     exit 1
