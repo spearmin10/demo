@@ -93,7 +93,7 @@ openssl req \
    -set_serial 0x$(openssl rand -hex 16) \
    -days 365 \
 #   -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\nbasicConstraints=CA:FALSE\nsubjectAltName=IP:%s" $(curl -s ifconfig.io)) \
-   -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\nbasicConstraints=CA:FALSE" \
+   -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\nbasicConstraints=CA:FALSE") \
    -out ${TSRAIN_PKI_DIR}/test-svc.cer.pem
 
 cat ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem ${TSRAIN_PKI_DIR}/tsrain-ca.cer.pem > ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
