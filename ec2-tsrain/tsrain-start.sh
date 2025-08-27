@@ -31,20 +31,13 @@ if [ -z "${TSRAIN_CONTAINER_ID}" ]; then
   chmod 600 ${RAINLOOP_DEFAULT_ADMIN_PASSWORD_PATH}
 
   export RAINLOOP_DEFAULT_ADMIN_PASSWORD
-  TSRAIN_CONTAINER_ID=`docker container run --rm --memory 384m --memory-swap 2g -d \
+  docker container run --rm --memory 384m --memory-swap 2g \
     -p 25:25 -p 80:88 -p 143:143 -p 443:443 -p 465:465 -p 993:993 \
     --name "${CONTAINER_NAME}" \
     -e RAINLOOP_DEFAULT_ADMIN_PASSWORD \
     --mount "type=bind,source=${TSRAIN_PKI_PATH},target=/usr/local/etc/pki" \
     --mount "type=bind,source=${TSRAIN_CREDS_PATH},target=/var/opt/testserv/credentials.json" \
     "${TSRAIN_IMAGE}"`
-
-  if [ $? -eq 0 -a ! -z "${TSRAIN_CONTAINER_ID}" ]; then
-    echo "container ${CONTAINER_NAME} has been started - ${TSRAIN_CONTAINER_ID}"
-  else
-    echo "failed to start the container - ${CONTAINER_NAME}."
-    exit 1
-  fi
 else
   echo "container ${CONTAINER_NAME} is already active"
   exit 1
