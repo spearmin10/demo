@@ -75,28 +75,28 @@ openssl req \
  -newkey ec:<(openssl ecparam -name prime256v1) \
  -nodes \
  -subj "/C=JP/O=Cortex/CN=TSRAIN Root CA" \
- -keyout ${TSRAIN_PKI_DIR}/test-ca.key.pem | \
+ -keyout ${TSRAIN_PKI_DIR}/tsrain-root.key.pem | \
   openssl x509 -req \
-   -signkey ${TSRAIN_PKI_DIR}/test-ca.key.pem  \
+   -signkey ${TSRAIN_PKI_DIR}/tsrain-root.key.pem  \
    -days 730 \
    -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=cRLSign,digitalSignature,keyCertSign\nbasicConstraints=CA:TRUE") \
-   -out ${TSRAIN_PKI_DIR}/test-ca.cer.pem
+   -out ${TSRAIN_PKI_DIR}/tsrain-root.cer.pem
 
 openssl req \
  -newkey ec:<(openssl ecparam -name prime256v1) \
  -nodes \
  -subj "/C=JP/O=Cortex/CN=TSRAIN Service" \
- -keyout ${TSRAIN_PKI_DIR}/test-svc.key.pem | \
+ -keyout ${TSRAIN_PKI_DIR}/tsrain-svc.key.pem | \
   openssl x509 -req \
-   -CA ${TSRAIN_PKI_DIR}/test-ca.cer.pem \
-   -CAkey ${TSRAIN_PKI_DIR}/test-ca.key.pem \
+   -CA ${TSRAIN_PKI_DIR}/tsrain-root.cer.pem \
+   -CAkey ${TSRAIN_PKI_DIR}/tsrain-root.key.pem \
    -set_serial 0x$(openssl rand -hex 16) \
    -days 365 \
 #   -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\nbasicConstraints=CA:FALSE\nsubjectAltName=IP:%s" $(curl -s ifconfig.io)) \
    -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\nbasicConstraints=CA:FALSE") \
-   -out ${TSRAIN_PKI_DIR}/test-svc.cer.pem
+   -out ${TSRAIN_PKI_DIR}/tsrainsvc.cer.pem
 
-cat ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem ${TSRAIN_PKI_DIR}/tsrain-ca.cer.pem > ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
+cat ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem ${TSRAIN_PKI_DIR}/tsrain-root.cer.pem > ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
 
 chmod 600 ${TSRAIN_PKI_DIR}/*.key.pem
 
