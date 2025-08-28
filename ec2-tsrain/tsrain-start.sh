@@ -22,7 +22,7 @@ if [ -z "${TSRAIN_CONTAINER_ID}" ]; then
   mkdir -p `dirname "${TSRAIN_CREDS_PATH}"`
 
   if [ ! -f ${TSRAIN_CREDS_PATH} ]; then
-    jq --arg password "${MAILBOX_PASSWORD}" -n '."*".password = $password' > ${TSRAIN_CREDS_PATH}
+    jq --arg password "${TSRAIN_MAILBOX_PASSWORD}" -n '."*".password = $password' > ${TSRAIN_CREDS_PATH}
   fi
   chmod 600 ${TSRAIN_CREDS_PATH}
 
