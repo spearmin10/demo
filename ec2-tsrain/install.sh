@@ -94,8 +94,7 @@ openssl req \
    -out ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem
 
 cat ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem ${TSRAIN_PKI_DIR}/tsrain-root.cer.pem > ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
-
-# chmod 600 ${TSRAIN_PKI_DIR}/*.key.pem
+chmod 600 ${TSRAIN_PKI_DIR}/*.key.pem
 
 # Apply zram settings
 echo "*** The system will reboot in 10 seconds. ***"
