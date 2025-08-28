@@ -1,4 +1,4 @@
-TSRAIN Installer
+TSRAIN Email Service Installer
 ===========
 
 Get Started
