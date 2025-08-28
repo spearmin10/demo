@@ -1,5 +1,9 @@
 #!/bin/sh
 
+TSRAIN_HOME=/opt/tsrain
+TSRAIN_PKI_DIR=${TSRAIN_HOME}/pki
+TSRAIN_BIN_DIR=${TSRAIN_HOME}/bin
+
 if [ "$(id -u)" -ne 0 ]; then
   echo "The script must be run as root"
   exit 1
@@ -16,10 +20,10 @@ cat << '__EOT__' > /etc/rc.d/rc.local
 #!/bin/sh
 
 ## Create and enable a swap
-SWAPFILENAME=/swap.img
-SIZE=2g
-rm -f $SWAPFILENAME
-fallocate -l $SIZE $SWAPFILENAME && mkswap $SWAPFILENAME && swapon $SWAPFILENAME
+SWAP_FILENAME=/swap.img
+SWAP_SIZE=2g
+rm -f ${SWAPFILENAME}
+fallocate -l ${SWAP_SIZE} ${SWAP_FILENAME} && mkswap ${SWAP_FILENAME} && swapon ${SWAP_FILENAME}
 
 ## Enable zram
 modprobe zram
@@ -33,11 +37,12 @@ __EOT__
 chmod +x /etc/rc.d/rc.local
 
 ### Setup TSRAIN
-mkdir -p /opt/tsrain/bin
-cd /opt/tsrain/bin
+mkdir -p ${TSRAIN_BIN_DIR}
+cd ${TSRAIN_BIN_DIR}
 for file in tsrain-start.sh tsrain-stop.sh
 do
-  curl -s -L -J -O -C - https://github.com/spearmin10/demo/blob/main/ec2-tsrain/${file}?raw=true
+  rm -f ${file}
+  curl -s -L -J -O https://github.com/spearmin10/demo/blob/main/ec2-tsrain/${file}?raw=true
   if [ $? -ne 0 ]; then
     echo "Failed to download ${file}."
     exit 1
@@ -45,13 +50,13 @@ do
   chmod +x ${file}
 done
 
-cat << '__EOT__' > /etc/systemd/system/tsrain.service
+cat << __EOT__ > /etc/systemd/system/tsrain.service
 [Unit]
 Description = TSRAIN Web Mail
 
 [Service]
-ExecStart = /opt/tsrain/bin/tsrain-start.sh
-ExecStop = /opt/tsrain/bin/tsrain-stop.sh
+ExecStart = ${TSRAIN_BIN_DIR}/tsrain-start.sh
+ExecStop = ${TSRAIN_BIN_DIR}/tsrain-stop.sh
 Restart = always
 Type = simple
 
@@ -62,13 +67,12 @@ __EOT__
 systemctl enable tsrain
 
 ### Setup SSL Frontend
-TSRAIN_PKI_DIR=/opt/tsrain/pki
 mkdir -p ${TSRAIN_PKI_DIR}
 
 openssl req \
  -newkey ec:<(openssl ecparam -name prime256v1) \
  -nodes \
- -subj "/C=JP/O=Cortex/CN=TSRAIN Root CA" \
+ -subj "/C=JP/O=Spearmint/CN=TSRAIN Root CA" \
  -keyout ${TSRAIN_PKI_DIR}/tsrain-root.key.pem | \
   openssl x509 -req \
    -signkey ${TSRAIN_PKI_DIR}/tsrain-root.key.pem  \
@@ -79,7 +83,7 @@ openssl req \
 openssl req \
  -newkey ec:<(openssl ecparam -name prime256v1) \
  -nodes \
- -subj "/C=JP/O=Cortex/CN=TSRAIN Service" \
+ -subj "/C=JP/O=Spearmint/CN=TSRAIN Service" \
  -keyout ${TSRAIN_PKI_DIR}/tsrain-svc.key.pem | \
   openssl x509 -req \
    -CA ${TSRAIN_PKI_DIR}/tsrain-root.cer.pem \
