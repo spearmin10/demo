@@ -19,19 +19,19 @@ systemctl restart docker.service
 cat << '__EOT__' > /etc/rc.d/rc.local
 #!/bin/sh
 
-## Create and enable a swap
-SWAP_FILENAME=/swap.img
-SWAP_SIZE=2g
-rm -f ${SWAP_FILENAME}
-fallocate -l ${SWAP_SIZE} ${SWAP_FILENAME} && mkswap ${SWAP_FILENAME} && swapon ${SWAP_FILENAME}
+if [ -z "$(swapon --show)" ]; then
+  ## Create and enable a swap
+  SWAP_FILENAME=/swap.img
+  SWAP_SIZE=2g
+  rm -f ${SWAP_FILENAME}
+  fallocate -l ${SWAP_SIZE} ${SWAP_FILENAME} && mkswap ${SWAP_FILENAME} && swapon ${SWAP_FILENAME}
 
-## Enable zram
-modprobe zram
-echo lz4 > /sys/block/zram0/comp_algorithm
-echo 2048M > /sys/block/zram0/disksize
-mkswap /dev/zram0
-swapon -p 5 /dev/zram0
-
+  modprobe zram
+  echo lz4 > /sys/block/zram0/comp_algorithm
+  echo 2048M > /sys/block/zram0/disksize
+  mkswap /dev/zram0
+  swapon -p 5 /dev/zram0
+fi
 __EOT__
 
 chmod +x /etc/rc.d/rc.local
