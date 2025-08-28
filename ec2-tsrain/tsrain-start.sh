@@ -4,7 +4,7 @@ CONTAINER_NAME=tsrain
 TSRAIN_HOME=/opt/tsrain
 TSRAIN_PKI_PATH=${TSRAIN_HOME}/pki
 TSRAIN_CREDS_PATH="/var/opt/tsrain/services/${CONTAINER_NAME}/credentials.json"
-TSRAIN_MAILBOX_PASSWORD=Password123!
+TSRAIN_MAILBOX_PASSWORD=TsrainDefault0!
 RAINLOOP_DEFAULT_ADMIN_PASSWORD_PATH="/var/opt/tsrain/services/${CONTAINER_NAME}/rainloop-default-admin-password.txt"
 
 cd `dirname $0`
