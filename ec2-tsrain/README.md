@@ -8,12 +8,12 @@ Get Started
 Minimum system requirements:
  - Architecture: ARM 64-bits
    - Machine Image: Amazon Linux 2023
-   - Instance Type: tg4.micro (2 vCPU, 1GB RAM)
+   - Instance Type: tg4.micro (or any instance type with at least 1 vCPU and 1GB of RAM)
    - Storage Size: 8 GB
 
  - Architecture: x86 64-bits
    - Machine Image: Amazon Linux 2023
-   - Instance Type: t4.micro (1 vCPU, 1GB RAM)
+   - Instance Type: t4.micro (or any instance type with at least 1 vCPU and 1GB of RAM)
    - Storage Size: 8 GB
 
 ### 2. Run install.sh on the instance
