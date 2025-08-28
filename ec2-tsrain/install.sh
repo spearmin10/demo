@@ -22,7 +22,7 @@ cat << '__EOT__' > /etc/rc.d/rc.local
 ## Create and enable a swap
 SWAP_FILENAME=/swap.img
 SWAP_SIZE=2g
-rm -f ${SWAPFILENAME}
+rm -f ${SWAP_FILENAME}
 fallocate -l ${SWAP_SIZE} ${SWAP_FILENAME} && mkswap ${SWAP_FILENAME} && swapon ${SWAP_FILENAME}
 
 ## Enable zram
