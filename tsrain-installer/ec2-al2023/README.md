@@ -54,11 +54,13 @@ Configure the inbound rules of the security group associated with your instance 
 Use your own server certificate
 ----------
 ### 1. Replace the certificate and private key
+  - Server private key
+    - /opt/tsrain/pki/tsrain-svc.key.pem
+  - Server certificate
+    - /opt/tsrain/pki/tsrain-svc.cer.pem
   - Server Certificate with intermediate and root CA certs
     - /opt/tsrain/pki/tsrain-svc.chain.pem
       - (This file should contain the server certificate, followed by any intermediate CA certificates, and then the root CA certificate, in that specific order.)
-  - Server private key
-    - /opt/tsrain/pki/tsrain-svc.key.pem
 
 ### 2. Restart the service.
   - sudo systemctl restart tsrain
