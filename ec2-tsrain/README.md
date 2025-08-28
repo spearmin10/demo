@@ -31,7 +31,7 @@ Configure the inbound rules of the security group associated with your instance 
 - TSRAIN Web Mail
   - https://&lt;your public ip&gt;/ or http://&lt;your public ip&gt;/
     - User ID: (any users)
-    - Initial Password: Password123!
+    - Initial Password: TsrainDefault0!
   - https://&lt;your public ip&gt;/?admin or http://&lt;your public ip&gt;/?admin
     - User ID: admin
     - Password: (See /opt/tsrain/services/tsrain/rainloop-default-admin-password.txt)
