@@ -10,9 +10,11 @@ RAINLOOP_DEFAULT_ADMIN_PASSWORD_PATH="/var/opt/tsrain/services/${CONTAINER_NAME}
 cd `dirname $0`
 
 LATEST_TAG=`curl -s https://registry.hub.docker.com/v2/repositories/spearmint/tsrain/tags | jq -r '.results[].name' | sort -r --version-sort | head -1`
-
 if [ -z "${LATEST_TAG}" ]; then
   TSRAIN_IMAGE=`docker images --format "{{.Repository}}:{{.Tag}}" | grep -E "^spearmint/tsrain:" | sort -r | head -1`
+  if [ -z "${TSRAIN_IMAGE}" ]; then
+    TSRAIN_IMAGE=spearmint/tsrain:latest
+  fi
 else
   TSRAIN_IMAGE=spearmint/tsrain:${LATEST_TAG}
 fi
