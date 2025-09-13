@@ -70,20 +70,21 @@ __EOT__
 
 
 ### Issue client certificates
-
-openssl req \
- -newkey ec:<(openssl ecparam -name prime256v1) \
- -nodes \
- -subj "/C=JP/O=Spearmint/CN=imap4-client" \
- -keyout ${TSRAIN_PKI_DIR}/tsrain-imap4-client.key.pem | \
-  openssl x509 -req \
-   -CA ${TSRAIN_PKI_DIR}/tsrain-root.cer.pem \
-   -CAkey ${TSRAIN_PKI_DIR}/tsrain-root.key.pem \
-   -set_serial 0x$(openssl rand -hex 16) \
-   -days 365 \
-   -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=clientAuth\nbasicConstraints=CA:FALSE") \
-   -out ${TSRAIN_PKI_DIR}/tsrain-imap4-client.cer.pem
-
+for name in smtp imap4 rainloop
+do
+  openssl req \
+   -newkey ec:<(openssl ecparam -name prime256v1) \
+   -nodes \
+   -subj "/C=JP/O=Spearmint/CN=${name}-client" \
+   -keyout ${TSRAIN_PKI_DIR}/tsrain-${name}-client.key.pem | \
+    openssl x509 -req \
+     -CA ${TSRAIN_PKI_DIR}/tsrain-root.cer.pem \
+     -CAkey ${TSRAIN_PKI_DIR}/tsrain-root.key.pem \
+     -set_serial 0x$(openssl rand -hex 16) \
+     -days 365 \
+     -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=clientAuth\nbasicConstraints=CA:FALSE") \
+     -out ${TSRAIN_PKI_DIR}/tsrain-${name}-client.cer.pem
+done
 chmod 600 ${TSRAIN_PKI_DIR}/*.key.pem
 
 # Start the service
