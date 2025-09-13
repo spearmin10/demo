@@ -4,10 +4,28 @@ TSRAIN_HOME=/opt/tsrain
 TSRAIN_PKI_DIR=${TSRAIN_HOME}/pki
 TSRAIN_BIN_DIR=${TSRAIN_HOME}/bin
 
+usage_exit() {
+  echo "Usage: $0 [-m] [-h]" 1>&2
+  exit 1
+}
+
 if [ "$(id -u)" -ne 0 ]; then
   echo "The script must be run as root"
   exit 1
 fi
+
+PROTOCOL_MULTIPLEXER=0
+while getopts mh OPT
+do
+  case $OPT in
+    m)  PROTOCOL_MULTIPLEXER=1
+        ;;
+    h)  usage_exit
+        ;;
+    \?) usage_exit
+        ;;
+  esac
+done
 
 ### Setup System
 dnf install -y jq docker
@@ -39,7 +57,13 @@ chmod +x /etc/rc.d/rc.local
 ### Setup TSRAIN
 mkdir -p ${TSRAIN_BIN_DIR}
 cd ${TSRAIN_BIN_DIR}
-for file in tsrain-start.sh tsrain-stop.sh
+
+FILES="tsrain-start.sh tsrain-stop.sh"
+if [ ${PROTOCOL_MULTIPLEXER} -eq 1 ]; then
+  FILES="${FILES} install-pm.sh"
+fi
+
+for file in ${FILES}
 do
   rm -f ${file}
   curl -s -L -J -O https://github.com/spearmin10/demo/blob/main/tsrain-installer/ec2-al2023/${file}?raw=true
@@ -96,7 +120,14 @@ openssl req \
 cat ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem ${TSRAIN_PKI_DIR}/tsrain-root.cer.pem > ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
 chmod 600 ${TSRAIN_PKI_DIR}/*.key.pem
 
+if [ ${PROTOCOL_MULTIPLEXER} -eq 1 ]; then
+  ${TSRAIN_BIN_DIR}/install-pm.sh
+else
+  echo "*** Installation Completed. ***"
+fi
+
 # Apply zram settings
+echo ""
 echo "*** The system will reboot in 10 seconds. ***"
 sleep 10
 reboot
