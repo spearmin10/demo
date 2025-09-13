@@ -84,8 +84,8 @@ do
      -days 365 \
      -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=clientAuth\nbasicConstraints=CA:FALSE") \
      -out ${TSRAIN_PKI_DIR}/tsrain-${name}-client.cer.pem
+  chmod 600 ${TSRAIN_PKI_DIR}/tsrain-${name}-client.key.pem
 done
-chmod 600 ${TSRAIN_PKI_DIR}/*.key.pem
 
 # Start the service
 systemctl enable tsrain-pm
