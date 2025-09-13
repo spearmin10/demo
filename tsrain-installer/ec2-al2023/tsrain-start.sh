@@ -33,13 +33,18 @@ if [ -z "${TSRAIN_CONTAINER_ID}" ]; then
   chmod 600 ${RAINLOOP_DEFAULT_ADMIN_PASSWORD_PATH}
 
   export RAINLOOP_DEFAULT_ADMIN_PASSWORD
+  if [[ `systemctl is-enabled tsrain-pm 2> /dev/null` = "enabled" ]]; then
+    PORT_MAP="-p 25:25 -p 80:80 -p 143:143 -p 465:465 -p 993:993"
+  else
+    PORT_MAP="-p 25:25 -p 80:80 -p 143:143 -p 443:443 -p 465:465 -p 993:993"
+  fi
   docker container run --rm --memory 384m --memory-swap 2g \
-    -p 25:25 -p 80:80 -p 143:143 -p 443:443 -p 465:465 -p 993:993 \
+    ${PORT_MAP} \
     --name "${CONTAINER_NAME}" \
     -e RAINLOOP_DEFAULT_ADMIN_PASSWORD \
     --mount "type=bind,source=${TSRAIN_PKI_PATH},target=/usr/local/etc/pki" \
     --mount "type=bind,source=${TSRAIN_CREDS_PATH},target=/var/opt/testserv/credentials.json" \
-    "${TSRAIN_IMAGE}"
+    "${TSRAIN_IMAGE}"7
 else
   echo "container ${CONTAINER_NAME} is already active"
   exit 1
