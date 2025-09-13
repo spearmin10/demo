@@ -8,6 +8,7 @@ import (
   "os"
   "io"
   "sync"
+  "bytes"
   "strings"
   "encoding/json"
   "crypto/x509"
@@ -99,37 +100,41 @@ func (pm *ProtocolMultiplexer) ForwardTransaction(lc *tls.Conn) {
   }
   var initialBytes []byte
   if protocol == "" {
-    initialBytes := make([]byte, 1)
-    lc.SetReadDeadline(time.Now().Add(2 * time.Second))
-    _, err = lc.Read(initialBytes)
+    initialBytes = make([]byte, 3)
+    lc.SetReadDeadline(time.Now().Add(3 * time.Second))
+    n, err := lc.Read(initialBytes)
+    initialBytes = initialBytes[:n]
     lc.SetDeadline(time.Time{})
     
-    if err == nil {
-      if initialBytes[0] == 'E' || initialBytes[0] == 'e' {
+    if n >= 0 {
+      if bytes.EqualFold(initialBytes, []byte("EHLO"[:n])) {
         // EHLO or ehlo
+        protocol = "smtp"
+      }else if n >= 3 && bytes.EqualFold(initialBytes, []byte("HELO"[:n])) {
+        // HELO or helo
         protocol = "smtp"
       } else {
         protocol = "rainloop"
       }
-    } else {
+    } else if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
       // Waiting for SMTP or IMAP greeting, but we don't suuport IMAP in auto detection
       protocol = "smtp"
+      log.Print(err)
+    } else {
+      log.Print(err)
+      return
     }
   }
   portMap := map[string]int{
-		"smtp": pm.Config.Services.SmtpPort,
-		"imap4": pm.Config.Services.Imap4Port,
-		"ranloop": pm.Config.Services.RainloopPort,
-	}
+    "smtp": pm.Config.Services.SmtpPort,
+    "imap4": pm.Config.Services.Imap4Port,
+    "rainloop": pm.Config.Services.RainloopPort,
+  }
   // Connect to the remote host
-  rc, err := tls.DialWithDialer(
-    &net.Dialer{Timeout: 5 * time.Second},
-    "tcp",
-    fmt.Sprintf("127.0.0.1:%d", portMap[protocol]),
-    &tls.Config{
-      InsecureSkipVerify: true,
-    },
-  )
+  dialer := net.Dialer{
+    Timeout: 5 * time.Second,
+  }
+  rc, err := dialer.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", portMap[protocol]))
   if err != nil {
     log.Print(err)
     return
@@ -137,9 +142,11 @@ func (pm *ProtocolMultiplexer) ForwardTransaction(lc *tls.Conn) {
   defer rc.Close()
 
   // Fowarding
-  if _, err := rc.Write(initialBytes); err != nil {
-    log.Print(err)
-    return
+  if initialBytes != nil && len(initialBytes) != 0 {
+    if _, err := rc.Write(initialBytes); err != nil {
+      log.Print(err)
+      return
+    }
   }
   var wg sync.WaitGroup
   wg.Add(2)
