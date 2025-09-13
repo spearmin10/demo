@@ -44,7 +44,7 @@ if [ -z "${TSRAIN_CONTAINER_ID}" ]; then
     -e RAINLOOP_DEFAULT_ADMIN_PASSWORD \
     --mount "type=bind,source=${TSRAIN_PKI_PATH},target=/usr/local/etc/pki" \
     --mount "type=bind,source=${TSRAIN_CREDS_PATH},target=/var/opt/testserv/credentials.json" \
-    "${TSRAIN_IMAGE}"7
+    "${TSRAIN_IMAGE}"
 else
   echo "container ${CONTAINER_NAME} is already active"
   exit 1
