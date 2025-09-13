@@ -14,7 +14,7 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
-PROTOCOL_MULTIPLEXER=0
+PROTOCOL_MULTIPLEXER=${PROTOCOL_MULTIPLEXER:-0}
 while getopts mh OPT
 do
   case $OPT in
