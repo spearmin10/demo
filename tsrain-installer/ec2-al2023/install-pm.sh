@@ -14,7 +14,6 @@ if [ -z "$(systemctl status tsrain 2> /dev/null)" ]; then
   echo "TSRAIN must be installed before tsrain-pm."
 fi
 
-
 ### Setup System
 dnf install -y go
 
