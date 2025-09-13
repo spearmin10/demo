@@ -74,7 +74,7 @@ __EOT__
 openssl req \
  -newkey ec:<(openssl ecparam -name prime256v1) \
  -nodes \
- -subj "/CN=imap4-client/O=Spearmint/CN=TSRAIN Service" \
+ -subj "/C=JP/O=Spearmint/CN=imap4-client" \
  -keyout ${TSRAIN_PKI_DIR}/tsrain-imap4-client.key.pem | \
   openssl x509 -req \
    -CA ${TSRAIN_PKI_DIR}/tsrain-root.cer.pem \
