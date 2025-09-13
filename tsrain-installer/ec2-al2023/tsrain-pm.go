@@ -106,7 +106,7 @@ func (pm *ProtocolMultiplexer) ForwardTransaction(lc *tls.Conn) {
     initialBytes = initialBytes[:n]
     lc.SetDeadline(time.Time{})
     
-    if n >= 0 {
+    if n > 0 {
       if bytes.EqualFold(initialBytes, []byte("EHLO"[:n])) {
         // EHLO or ehlo
         protocol = "smtp"
