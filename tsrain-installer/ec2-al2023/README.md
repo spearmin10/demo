@@ -40,14 +40,14 @@ Configure the inbound rules of the security group associated with your instance 
   - Port: 25
   - STARTTLS is supported
 
-- TSRAIN SMTP Service (TLS)
+- TSRAIN SMTP Service (SMTPS)
   - Port: 465
 
 - TSRAIN IMAP4 Service
   - Port: 143
   - STARTTLS is supported
 
-- TSRAIN IMAP4 Service (TLS)
+- TSRAIN IMAP4 Service (IMAPS)
   - Port: 993
 
 
@@ -93,7 +93,7 @@ curl -s -L https://github.com/spearmin10/demo/blob/main/tsrain-installer/ec2-al2
 ### Service Ports
 
 All service ports remain available after installing the Protocol Multiplexer.
-In addition, the Protocol Multiplexer runs on port 443, enabling access to SMTPS, IMAP4-TLS, and TSRAIN WebMail (HTTPS) over a single port by detecting the protocol of each incoming connection.
+In addition, the Protocol Multiplexer runs on port 443, enabling access to SMTPS, IMAPS, and TSRAIN WebMail (HTTPS) over a single port by detecting the protocol of each incoming connection.
 
 #### Accessing from Clients
 The protocol multiplexer can identify the service based on a **client certificate** presented during the TLS handshake.
@@ -112,8 +112,8 @@ Managing TSRAIN Services
 TSRAIN services are managed using **systemd**.
 There are two main services:
 
-1. **`tsrain`** – controls all standard TSRAIN services (WebMail, SMTP, IMAP4).
-2. **`tsrain-pm`** – protocol multiplexer for serving WebMail, SMTP, and IMAP4 on port 443.
+1. **`tsrain`** – controls all standard TSRAIN services (WebMail, SMTP, SMTPS, IMAP4, IMAPS).
+2. **`tsrain-pm`** – protocol multiplexer for serving WebMail, SMTPS, and IMAPS on port 443.
 
 #### Start the Services
 ```
