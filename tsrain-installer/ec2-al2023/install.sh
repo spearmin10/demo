@@ -34,7 +34,10 @@ systemctl enable docker
 usermod -a -G docker ec2-user
 systemctl restart docker.service
 
-cat << '__EOT__' > /etc/rc.d/rc.local
+mkdir -p ${TSRAIN_BIN_DIR}
+mkdir -p ${TSRAIN_PKI_DIR}
+
+cat << __EOT__ > ${TSRAIN_BIN_DIR}/swap-on.sh
 #!/bin/sh
 
 if [ -z "$(swapon --show)" ]; then
@@ -52,10 +55,13 @@ if [ -z "$(swapon --show)" ]; then
 fi
 __EOT__
 
-chmod +x /etc/rc.d/rc.local
+if [ ! -f /etc/rc.d/rc.local ]; then
+  echo "#!/bin/sh" > /etc/rc.d/rc.local
+  chmod +x /etc/rc.d/rc.local
+fi
+grep -qxF "${TSRAIN_BIN_DIR}/swap-on.sh" /etc/rc.d/rc.local || echo "${TSRAIN_BIN_DIR}/swap-on.sh" >> /etc/rc.d/rc.local
 
 ### Setup TSRAIN
-mkdir -p ${TSRAIN_BIN_DIR}
 cd ${TSRAIN_BIN_DIR}
 
 FILES="tsrain-start.sh tsrain-stop.sh"
@@ -71,8 +77,8 @@ do
     echo "Failed to download ${file}."
     exit 1
   fi
-  chmod +x ${file}
 done
+chmod +x ${TSRAIN_BIN_DIR}/*.sh
 
 cat << __EOT__ > /etc/systemd/system/tsrain.service
 [Unit]
@@ -91,8 +97,6 @@ __EOT__
 systemctl enable tsrain
 
 ### Setup SSL Frontend
-mkdir -p ${TSRAIN_PKI_DIR}
-
 openssl req \
  -newkey ec:<(openssl ecparam -name prime256v1) \
  -nodes \
@@ -122,14 +126,14 @@ ln -s ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem ${TSRAIN_PKI_DIR}/server.cer.pem
 ln -s ${TSRAIN_PKI_DIR}/tsrain-svc.key.pem ${TSRAIN_PKI_DIR}/server.key.pem
 cat ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem ${TSRAIN_PKI_DIR}/tsrain-root.cer.pem ${TSRAIN_PKI_DIR}/server.chain.pem
 
+### Apply zram settings
+${TSRAIN_BIN_DIR}/swap-on.sh
+
+### Install Protocol Multiplexer
 if [ ${PROTOCOL_MULTIPLEXER} -eq 1 ]; then
   ${TSRAIN_BIN_DIR}/install-pm.sh
 else
   echo "*** Installation Completed. ***"
 fi
 
-# Apply zram settings
-echo ""
-echo "*** The system will reboot in 10 seconds. ***"
-sleep 10
-reboot
+
