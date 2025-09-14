@@ -11,9 +11,13 @@ systemctl stop tsrain 2> /dev/null
 systemctl stop tsrain-pm 2> /dev/null
 systemctl disable tsrain 2> /dev/null
 systemctl disable tsrain-pm 2> /dev/null
+
 rm -f /etc/systemd/system/tsrain.service 2> /dev/null
 rm -f /etc/systemd/system/tsrain-pm.service 2> /dev/null
 rm -rf "${TSRAIN_HOME}"
+
+sed -i "#^${TSRAIN_HOME}#d" /etc/rc.d/rc.local
+
 docker images spearmint/tsrain --format "{{.Repository}}:{{.Tag}}" | xargs -r docker rmi 2> /dev/null
 
 echo "*** Uninstallation Finished. ***"
