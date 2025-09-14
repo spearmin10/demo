@@ -55,15 +55,16 @@ Use your own server certificate
 ----------
 ### 1. Replace the certificate and private key
   - Server private key
-    - /opt/tsrain/pki/tsrain-svc.key.pem
+    - /opt/tsrain/pki/server.key.pem
   - Server certificate
-    - /opt/tsrain/pki/tsrain-svc.cer.pem
+    - /opt/tsrain/pki/server.cer.pem
   - Server Certificate with intermediate and root CA certs
-    - /opt/tsrain/pki/tsrain-svc.chain.pem
+    - /opt/tsrain/pki/server.chain.pem
       - (This file should contain the server certificate, followed by any intermediate CA certificates, and then the root CA certificate, in that specific order.)
 
 ### 2. Restart the service.
   - sudo systemctl restart tsrain
+  - sudo systemctl restart tsrain-pm   # if installed and enabled
 
 
 Email Users and password
