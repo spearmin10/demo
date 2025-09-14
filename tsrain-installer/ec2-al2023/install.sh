@@ -37,7 +37,7 @@ systemctl restart docker.service
 mkdir -p ${TSRAIN_BIN_DIR}
 mkdir -p ${TSRAIN_PKI_DIR}
 
-cat << __EOT__ > ${TSRAIN_BIN_DIR}/swap-on.sh
+cat << '__EOT__' > ${TSRAIN_BIN_DIR}/swap-on.sh
 #!/bin/sh
 
 if [ -z "$(swapon --show)" ]; then
