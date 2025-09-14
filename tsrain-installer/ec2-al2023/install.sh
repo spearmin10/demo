@@ -62,7 +62,7 @@ fi
 grep -qxF "${TSRAIN_BIN_DIR}/swap-on.sh" /etc/rc.d/rc.local || echo "${TSRAIN_BIN_DIR}/swap-on.sh" >> /etc/rc.d/rc.local
 
 # Apply zram settings
-${TSRAIN_BIN_DIR}/swap-on.sh
+sh ${TSRAIN_BIN_DIR}/swap-on.sh
 
 ### Setup TSRAIN
 cd ${TSRAIN_BIN_DIR}
