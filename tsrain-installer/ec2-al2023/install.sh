@@ -54,6 +54,7 @@ if [ -z "$(swapon --show)" ]; then
   swapon -p 5 /dev/zram0
 fi
 __EOT__
+chmod +x ${TSRAIN_BIN_DIR}/swap-on.sh
 
 if [ ! -f /etc/rc.d/rc.local ]; then
   echo "#!/bin/sh" > /etc/rc.d/rc.local
@@ -62,7 +63,7 @@ fi
 grep -qxF "${TSRAIN_BIN_DIR}/swap-on.sh" /etc/rc.d/rc.local || echo "${TSRAIN_BIN_DIR}/swap-on.sh" >> /etc/rc.d/rc.local
 
 # Apply zram settings
-sh ${TSRAIN_BIN_DIR}/swap-on.sh
+${TSRAIN_BIN_DIR}/swap-on.sh
 
 ### Setup TSRAIN
 cd ${TSRAIN_BIN_DIR}
