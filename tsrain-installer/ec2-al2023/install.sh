@@ -33,10 +33,11 @@ if [ -z "$(swapon --show | grep "^${SWAP_FILEPATH}")" ]; then
   fallocate -l ${SWAP_SIZE} ${SWAP_FILEPATH} && mkswap ${SWAP_FILEPATH} && swapon ${SWAP_FILEPATH}
 fi
 
-SWAP_FILEPATH=/dev/zram0
+SWAP_NAME=/dev/zram0
 if [ -z "$(swapon --show | grep "^${SWAP_FILEPATH}")" ]; then
   modprobe zram
-  zramctl -r ${SWAP_FILEPATH}
+  #zramctl -r ${SWAP_FILEPATH}
+  #zramctl --find -a lz4 --size 512M --streams 4
   
   echo lz4 > /sys/block/zram0/comp_algorithm
   echo 2048M > /sys/block/zram0/disksize
