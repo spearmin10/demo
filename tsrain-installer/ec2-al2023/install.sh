@@ -117,8 +117,10 @@ openssl req \
    -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\nbasicConstraints=CA:FALSE") \
    -out ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem
 
-cat ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem ${TSRAIN_PKI_DIR}/tsrain-root.cer.pem > ${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem
 chmod 600 ${TSRAIN_PKI_DIR}/*.key.pem
+ln -s ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem ${TSRAIN_PKI_DIR}/server.cer.pem
+ln -s ${TSRAIN_PKI_DIR}/tsrain-svc.key.pem ${TSRAIN_PKI_DIR}/server.key.pem
+cat ${TSRAIN_PKI_DIR}/tsrain-svc.cer.pem ${TSRAIN_PKI_DIR}/tsrain-root.cer.pem ${TSRAIN_PKI_DIR}/server.chain.pem
 
 if [ ${PROTOCOL_MULTIPLEXER} -eq 1 ]; then
   ${TSRAIN_BIN_DIR}/install-pm.sh
