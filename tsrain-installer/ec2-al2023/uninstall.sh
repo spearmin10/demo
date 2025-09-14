@@ -20,4 +20,9 @@ sed -i "#^${TSRAIN_HOME}#d" /etc/rc.d/rc.local
 
 docker images spearmint/tsrain --format "{{.Repository}}:{{.Tag}}" | xargs -r docker rmi 2> /dev/null
 
+swapoff /swap.img 2> /dev/null
+swapoff /dev/zram0 2> /dev/null
+rm -f /swap.img
+rm -f /dev/zram0
+
 echo "*** Uninstallation Finished. ***"
