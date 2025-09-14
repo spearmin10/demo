@@ -116,4 +116,4 @@ systemctl enable tsrain-pm
 systemctl restart tsrain
 systemctl restart tsrain-pm
 
-echo "*** Installation Completed. ***"
+echo "*** Installation Complete. ***"
