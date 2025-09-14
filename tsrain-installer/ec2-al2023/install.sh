@@ -36,7 +36,7 @@ fi
 SWAP_FILEPATH=/dev/zram0
 if [ -z "$(swapon --show | grep "^${SWAP_FILEPATH}")" ]; then
   modprobe zram
-  /usr/lib/systemd/system-generators/zram-generator --reset-device zram0
+  zramctl -r ${SWAP_FILEPATH}
   
   echo lz4 > /sys/block/zram0/comp_algorithm
   echo 2048M > /sys/block/zram0/disksize
