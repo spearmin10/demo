@@ -47,11 +47,11 @@ if [ -z "$(swapon --show)" ]; then
   rm -f ${SWAP_FILENAME}
   fallocate -l ${SWAP_SIZE} ${SWAP_FILENAME} && mkswap ${SWAP_FILENAME} && swapon ${SWAP_FILENAME}
 
+  SWAP_FILENAME=/dev/zram0
   modprobe zram
   echo lz4 > /sys/block/zram0/comp_algorithm
   echo 2048M > /sys/block/zram0/disksize
-  mkswap /dev/zram0
-  swapon -p 5 /dev/zram0
+  mkswap ${SWAP_FILENAME} && swapon -p 5 ${SWAP_FILENAME}
 fi
 __EOT__
 
