@@ -22,8 +22,6 @@ Minimum system requirements:
 curl -s -L https://github.com/spearmin10/demo/blob/main/tsrain-installer/ec2-al2023/install.sh?raw=true | sudo sh
 ```
 
-The instance will reboot after the installation is complete, and the services will start automatically.
-
 ### 3. Open ports and access the services
 
 Configure the inbound rules of the security group associated with your instance to allow access to the service ports. The ports used by the services are listed below, along with their access methods.
@@ -81,8 +79,6 @@ This is achieved by installing an additional service that inspects incoming conn
 ```
 curl -s -L https://github.com/spearmin10/demo/blob/main/tsrain-installer/ec2-al2023/install.sh?raw=true | sudo sh /dev/stdin -m
 ```
-
-The instance will reboot after the installation is complete, and the services will start automatically.
 
 ### Option 2: Add to an Existing Installation
 #### Run install-pm.sh
