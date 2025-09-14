@@ -58,8 +58,8 @@ cat << __EOT__ > ${TSRAIN_ETC_DIR}/tsrain-pm.json
     "service_port": 443
   },
   "server_cert": {
-    "private_key": "${TSRAIN_PKI_DIR}/tsrain-svc.key.pem",
-    "certificate": "${TSRAIN_PKI_DIR}/tsrain-svc.chain.pem"
+    "private_key": "${TSRAIN_PKI_DIR}/server.key.pem",
+    "certificate": "${TSRAIN_PKI_DIR}/server.chain.pem"
   },
   "client_ca_files": [
     "${TSRAIN_PKI_DIR}/tsrain-root.cer.pem"
