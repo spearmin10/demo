@@ -92,8 +92,8 @@ curl -s -L https://github.com/spearmin10/demo/blob/main/tsrain-installer/ec2-al2
 
 ### Service Ports
 
-All standard service ports are available by default.
-In addition, a protocol multiplexer runs on port 443, allowing access to SMTP, IMAP4, and TSRAIN WebMail (HTTPS) over a single port by detecting the protocol.
+All service ports remain available after installing the Protocol Multiplexer.
+In addition, the Protocol Multiplexer runs on port 443, enabling access to SMTP, IMAP4, and TSRAIN WebMail (HTTPS) over a single port by detecting the protocol of each incoming connection.
 
 #### Accessing from Clients
 The protocol multiplexer can identify the service based on a **client certificate** presented during the TLS handshake.
