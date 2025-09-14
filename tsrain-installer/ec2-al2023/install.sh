@@ -37,7 +37,7 @@ systemctl restart docker.service
 mkdir -p ${TSRAIN_BIN_DIR}
 mkdir -p ${TSRAIN_PKI_DIR}
 
-cat << '__EOT__' > ${TSRAIN_BIN_DIR}/swap-on.sh
+cat << '__EOT__' | tee ${TSRAIN_BIN_DIR}/swap-on.sh | sh
 #!/bin/sh
 
 if [ -z "$(swapon --show)" ]; then
@@ -54,7 +54,6 @@ if [ -z "$(swapon --show)" ]; then
   swapon -p 5 /dev/zram0
 fi
 __EOT__
-chmod +x ${TSRAIN_BIN_DIR}/swap-on.sh
 
 if [ ! -f /etc/rc.d/rc.local ]; then
   echo "#!/bin/sh" > /etc/rc.d/rc.local
