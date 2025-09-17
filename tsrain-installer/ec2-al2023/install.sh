@@ -33,7 +33,7 @@ if [ -z "$(swapon --show | grep "^${SWAP_FILEPATH}")" ]; then
   fallocate -l ${SWAP_SIZE} ${SWAP_FILEPATH} && mkswap ${SWAP_FILEPATH} && swapon ${SWAP_FILEPATH}
 fi
 
-SWAP_NAME=/dev/zram0
+SWAP_FILEPATH=/dev/zram0
 if [ -z "$(swapon --show | grep "^${SWAP_FILEPATH}")" ]; then
   modprobe zram
   #zramctl -r ${SWAP_FILEPATH}
