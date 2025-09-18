@@ -14,6 +14,7 @@ import (
   "crypto/x509"
   "crypto/tls"
   "net"
+  "bufio"
 )
 
 ///////////////////////////////////////////////////////////////////////
@@ -31,6 +32,16 @@ type Configuration struct {
   }  `json:"server_cert"`
 
   ClientCAFiles []string  `json:"client_ca_files"`
+}
+
+///////////////////////////////////////////////////////////////////////
+type PeekableConn struct{
+  net.Conn
+  Reader *bufio.Reader
+}
+
+func (pc *PeekableConn) Read(b []byte) (int, error){
+  return pc.Reader.Read(b)
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -76,65 +87,87 @@ func (pm *ProtocolMultiplexer) AddClientCAsFromFile(path string) error {
   return nil
 }
 
-func (pm *ProtocolMultiplexer) ForwardTransaction(lc *tls.Conn) {
-  defer lc.Close()
+func (pm *ProtocolMultiplexer) ForwardTransaction(ltcp net.Conn) {
+  defer ltcp.Close()
 
-  log.Printf("Connected from: %s", lc.RemoteAddr().String())
+  log.Printf("Connected from: %s", ltcp.RemoteAddr().String())
 
-  err := lc.Handshake()
-  if err != nil {
-    log.Printf("Handshake error: %s\n", err)
-    return
-  }
+  var lc net.Conn
+  var rport int
+
   // Detect protocol
-  var protocol string
-  for _, client_cert := range lc.ConnectionState().PeerCertificates {
-    cn := client_cert.Subject.CommonName
-    if strings.HasPrefix(cn, "imap4") {
-      protocol = "imap4"
-    } else if strings.HasPrefix(cn, "smtp") {
-      protocol = "smtp"
-    } else if strings.HasPrefix(cn, "rainloop") {
-      protocol = "rainloop"
-    }
-  }
-  var initialBytes []byte
-  if protocol == "" {
-    initialBytes = make([]byte, 3)
-    lc.SetReadDeadline(time.Now().Add(3 * time.Second))
-    n, err := lc.Read(initialBytes)
-    initialBytes = initialBytes[:n]
-    lc.SetDeadline(time.Time{})
-    
-    if n > 0 {
-      if bytes.EqualFold(initialBytes, []byte("EHLO"[:n])) {
-        // EHLO or ehlo
-        protocol = "smtp"
-      }else if n >= 3 && bytes.EqualFold(initialBytes, []byte("HELO"[:n])) {
-        // HELO or helo
-        protocol = "smtp"
-      } else {
-        protocol = "rainloop"
-      }
-    } else if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-      // Waiting for SMTP or IMAP greeting, but we don't suuport IMAP in auto detection
-      protocol = "smtp"
-      log.Print(err)
+  ltcp.SetReadDeadline(time.Now().Add(3 * time.Second))
+  lb := bufio.NewReader(ltcp)
+  _, err := lb.Peek(1)
+  ltcp.SetDeadline(time.Time{})
+
+  if err != nil {
+    if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+      // TCP sessin is considered IMAP if no data is received.
+      lc = ltcp
+      rport = pm.Config.Services.Imap4Port
     } else {
       log.Print(err)
       return
     }
+  } else {
+    ltls := tls.Server(&PeekableConn{Conn: ltcp, Reader: lb}, pm.TLSConfig)
+    err = ltls.Handshake()
+    if err != nil {
+      log.Printf("Handshake error: %s\n", err)
+      return
+    }
+    var protocol string
+    for _, clientCert := range ltls.ConnectionState().PeerCertificates {
+      cn := clientCert.Subject.CommonName
+      if strings.HasPrefix(cn, "imap4") {
+        protocol = "imap4"
+      } else if strings.HasPrefix(cn, "smtp") {
+        protocol = "smtp"
+      } else if strings.HasPrefix(cn, "rainloop") {
+        protocol = "rainloop"
+      }
+    }
+    if protocol == "" {
+      ltls.SetReadDeadline(time.Now().Add(3 * time.Second))
+      lb = bufio.NewReader(ltls)
+      scheme, err := lb.Peek(3)
+      ltcp.SetDeadline(time.Time{})
+
+      if err != nil {
+        if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+          // TLS sessin is considered SMTP if no data is received.
+          protocol = "smtp"
+        } else {
+          log.Print(err)
+          return
+        }
+      } else {
+        if bytes.EqualFold(scheme, []byte("EHLO"[:3])) ||
+           bytes.EqualFold(scheme, []byte("HELO"[:3])) {
+          // EHLO, ehlo, HELO, or helo
+          protocol = "smtp"
+        } else {
+          // other scheme
+          protocol = "rainloop"
+        }
+      }
+      lc = &PeekableConn{Conn: ltls, Reader: lb}
+    } else {
+      lc = ltls
+    }
+    rport = map[string]int{
+      "smtp":     pm.Config.Services.SmtpPort,
+      "imap4":    pm.Config.Services.Imap4Port,
+      "rainloop": pm.Config.Services.RainloopPort,
+    }[protocol]
   }
-  portMap := map[string]int{
-    "smtp": pm.Config.Services.SmtpPort,
-    "imap4": pm.Config.Services.Imap4Port,
-    "rainloop": pm.Config.Services.RainloopPort,
-  }
+
   // Connect to the remote host
   dialer := net.Dialer{
     Timeout: 5 * time.Second,
   }
-  rc, err := dialer.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", portMap[protocol]))
+  rc, err := dialer.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", rport))
   if err != nil {
     log.Print(err)
     return
@@ -142,12 +175,6 @@ func (pm *ProtocolMultiplexer) ForwardTransaction(lc *tls.Conn) {
   defer rc.Close()
 
   // Fowarding
-  if initialBytes != nil && len(initialBytes) != 0 {
-    if _, err := rc.Write(initialBytes); err != nil {
-      log.Print(err)
-      return
-    }
-  }
   var wg sync.WaitGroup
   wg.Add(2)
   
@@ -165,7 +192,8 @@ func (pm *ProtocolMultiplexer) ForwardTransaction(lc *tls.Conn) {
 }
 
 func (pm *ProtocolMultiplexer) ServeForever(host string, port int) {
-  svr, err := tls.Listen("tcp", fmt.Sprintf("%s:%d", host, port), pm.TLSConfig)
+  //svr, err := tls.Listen("tcp", fmt.Sprintf("%s:%d", host, port), pm.TLSConfig)
+  svr, err := net.Listen("tcp", fmt.Sprintf("%s:%d", host, port))
   if err != nil {
     log.Panicln(err)
   }
@@ -178,11 +206,7 @@ func (pm *ProtocolMultiplexer) ServeForever(host string, port int) {
       continue
     }
     defer conn.Close()
-    
-    tlscon, ok := conn.(*tls.Conn)
-    if ok {
-      go pm.ForwardTransaction(tlscon)
-    }
+    go pm.ForwardTransaction(conn)
   }
 }
 
