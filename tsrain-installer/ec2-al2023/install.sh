@@ -102,7 +102,7 @@ issue_certificates() {
     openssl x509 -req \
      -signkey tsrain-root.key.pem  \
      -days 730 \
-     -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=cRLSign,digitalSignature,keyCertSign\nbasicConstraints=CA:TRUE") \
+     -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=critical,cRLSign,digitalSignature,keyCertSign\nsubjectKeyIdentifier=hash\nbasicConstraints=critical,CA:TRUE") \
      -out tsrain-root.cer.pem || error_exit
 
   openssl req \
@@ -115,7 +115,7 @@ issue_certificates() {
      -CAkey tsrain-root.key.pem \
      -set_serial 0x$(openssl rand -hex 16) \
      -days 365 \
-     -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\nbasicConstraints=CA:FALSE") \
+     -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=critical,digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\nsubjectKeyIdentifier=hash\nauthorityKeyIdentifier=keyid,issuer\nbasicConstraints=critical,CA:FALSE") \
      -out tsrain-svc.cer.pem || error_exit
 
   chmod 600 *.key.pem || error_exit
