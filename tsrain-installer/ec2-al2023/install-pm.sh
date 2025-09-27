@@ -63,7 +63,7 @@ __EOT__
        -CAkey tsrain-root.key.pem \
        -set_serial 0x$(openssl rand -hex 16) \
        -days 365 \
-       -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=clientAuth\nbasicConstraints=CA:FALSE") \
+       -extensions EXTS -extfile <(printf "[EXTS]\nkeyUsage=critical,digitalSignature,keyEncipherment\nextendedKeyUsage=clientAuth\nsubjectKeyIdentifier=hash\nauthorityKeyIdentifier=keyid,issuer\nbasicConstraints=critical,CA:FALSE") \
        -out tsrain-${name}-client.cer.pem || error_exit
     chmod 600 tsrain-${name}-client.key.pem || error_exit
   done
