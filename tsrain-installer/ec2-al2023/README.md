@@ -32,7 +32,7 @@ Configure the inbound rules of the security group associated with your instance 
     - Initial Password: TsrainDefault0!
   - https://&lt;your public ip&gt;/?admin or http://&lt;your public ip&gt;/?admin
     - User ID: admin
-    - Password: (See /opt/tsrain/services/tsrain/rainloop-default-admin-password.txt)
+    - Password: (See RAINLOOP_DEFAULT_ADMIN_PASSWORD at /opt/tsrain/etc/.env)
 
 - TSRAIN SMTP Service
   - Port: 25
@@ -40,6 +40,7 @@ Configure the inbound rules of the security group associated with your instance 
 
 - TSRAIN SMTP Service (SMTPS)
   - Port: 465
+  - Port: 443
 
 - TSRAIN IMAP4 Service
   - Port: 143
@@ -47,6 +48,7 @@ Configure the inbound rules of the security group associated with your instance 
 
 - TSRAIN IMAP4 Service (IMAPS)
   - Port: 993
+  - Port: 443 (client auth)
 
 
 Use your own server certificate
@@ -54,45 +56,24 @@ Use your own server certificate
 ### 1. Replace the certificate and private key
   - Server private key
     - /opt/tsrain/pki/server.key.pem
-  - Server certificate
-    - /opt/tsrain/pki/server.cer.pem
   - Server Certificate with intermediate and root CA certs
     - /opt/tsrain/pki/server.chain.pem
       - (This file should contain the server certificate, followed by any intermediate CA certificates, and then the root CA certificate, in that specific order.)
 
 ### 2. Restart the service.
   - sudo systemctl restart tsrain
-  - sudo systemctl restart tsrain-pm   # if installed and enabled
 
 
 Email Users and password
 ----------
 All mailbox users in the TSRAIN instance share a single common password, and any password change made by one user is automatically applied to all users. When specifying a mailbox email address for login, you can use a wildcard address to access all mailboxes matching the pattern. The wildcard must include the `@` symbol to separate the user and domain parts; for example, `*@*` grants access to all mailboxes. Additionally, the special account `*` allows access to all mailboxes without specifying an email address.
 
-Custom Installation: All Services on Port 443
+All Services on Port 443
 ----------
-To support environments where only port 443/TCP is accessible due to firewalls or other restrictions, TSRAIN can serve WebMail (HTTPS), IMAPS, and SMTPS over a single port (443).
-This is achieved by installing an additional service that inspects incoming connections on port 443, identifies the protocol, and dispatches the traffic to the appropriate backend service.
-
-### Option 1: Enable During a New Installation
-#### Run install.sh with the `-m` option:
-```
-curl -s -L https://github.com/spearmin10/demo/blob/main/tsrain-installer/ec2-al2023/install.sh?raw=true | sudo sh /dev/stdin -m
-```
-
-### Option 2: Add to an Existing Installation
-#### Run install-pm.sh
-```
-curl -s -L https://github.com/spearmin10/demo/blob/main/tsrain-installer/ec2-al2023/install-pm.sh?raw=true | sudo sh
-```
-
-### Service Ports
-
-All service ports remain available after installing the Protocol Multiplexer.
-In addition, the Protocol Multiplexer runs on port 443, enabling access to SMTPS, IMAPS, and TSRAIN WebMail (HTTPS) over a single port by detecting the protocol of each incoming connection.
+To support environments where only port 443/TCP is accessible due to firewalls or other restrictions, TSRAIN serves WebMail (HTTPS), IMAPS, and SMTPS over a single port (443) by default.
 
 #### Accessing from Clients
-The protocol multiplexer can identify the service based on a **client certificate** presented during the TLS handshake.
+The port can identify the service based on a **client certificate** presented during the TLS handshake.
 The installer automatically generates the following client certificates and private keys under `/opt/tsrain/pki/`:
 
 * `tsrain-smtp-client.cer.pem` / `tsrain-smtp-client.key.pem`
@@ -101,7 +82,7 @@ The installer automatically generates the following client certificates and priv
 
 Notes:
 * For **IMAP4**, client certificate–based identification is **mandatory**.
-* For **SMTP** and **WebMail (HTTPS)**, client certificates are **optional**. If not provided, the multiplexer identifies the target service based on the initial protocol behavior.
+* For **SMTP** and **WebMail (HTTPS)**, client certificates are **optional**. If not provided, the port identifies the target service based on the initial protocol behavior.
 
 Managing TSRAIN Services
 ----------
@@ -109,25 +90,23 @@ TSRAIN services are managed using **systemd**.
 There are two main services:
 
 1. **`tsrain`** – controls all standard TSRAIN services (WebMail, SMTP, SMTPS, IMAP4, IMAPS).
-2. **`tsrain-pm`** – protocol multiplexer for serving WebMail, SMTPS, and IMAPS on port 443.
+2. **`zram-swap`** – enables compressed in-memory swap using zram during system startup.
 
 #### Start the Services
 ```
 sudo systemctl start tsrain
-sudo systemctl start tsrain-pm
+sudo systemctl start zram-swap
 ```
 
 #### Stop the Services
 
 ```bash
 sudo systemctl stop tsrain
-sudo systemctl stop tsrain-pm
 ```
 
 #### Restart the Services
 ```
 sudo systemctl restart tsrain
-sudo systemctl restart tsrain-pm
 ```
 
 Licensing
