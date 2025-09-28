@@ -94,6 +94,7 @@ services:
         volumes:
             - ${TSRAIN_PKI_DIR}/server.key.pem:/usr/local/etc/pki/server.key.pem
             - ${TSRAIN_PKI_DIR}/server.chain.pem:/usr/local/etc/pki/server.chain.pem
+            - ${TSRAIN_PKI_DIR}/client.calist.pem:/usr/local/etc/pki/client.calist.pem
             - ${RAINLOOP_CREDENTOALS_PATH}:/var/opt/testserv/credentials.json
         ports:
             - "25:25"
@@ -176,9 +177,9 @@ issue_certificates() {
   done
 
   chmod 600 *.key.pem || error_exit
-  rm -f server.cer.pem server.key.pem
-  ln -sT tsrain-svc.cer.pem server.cer.pem || error_exit
-  ln -sT tsrain-svc.key.pem server.key.pem || error_exit
+  cp -f tsrain-svc.cer.pem server.cer.pem || error_exit
+  cp -f tsrain-svc.key.pem server.key.pem || error_exit
+  cp -f tsrain-root.cer.pem client.calist.pem || error_exit
   cat tsrain-svc.cer.pem tsrain-root.cer.pem > server.chain.pem || error_exit
 }
 
