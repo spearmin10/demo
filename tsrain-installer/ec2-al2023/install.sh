@@ -176,11 +176,11 @@ issue_certificates() {
     chmod 600 tsrain-${name}-client.key.pem || error_exit
   done
 
-  chmod 600 *.key.pem || error_exit
   cp -f tsrain-svc.cer.pem server.cer.pem || error_exit
   cp -f tsrain-svc.key.pem server.key.pem || error_exit
   cp -f tsrain-root.cer.pem client.calist.pem || error_exit
   cat tsrain-svc.cer.pem tsrain-root.cer.pem > server.chain.pem || error_exit
+  chmod 600 *.key.pem || error_exit
 }
 
 
