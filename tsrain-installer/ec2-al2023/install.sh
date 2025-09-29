@@ -22,8 +22,9 @@ error_exit() {
 
 install_system_packages() {
   dnf install -y jq gettext docker || error_exit
-  usermod -a -G docker ec2-user
   systemctl enable docker
+  systemctl start docker
+  usermod -a -G docker ec2-user
   systemctl restart docker
 
   if [ ! -f /usr/bin/docker-compose ]; then
