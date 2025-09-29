@@ -21,7 +21,7 @@ error_exit() {
 }
 
 install_system_packages() {
-  dnf install -y jq docker || error_exit
+  dnf install -y jq gettext docker || error_exit
   usermod -a -G docker ec2-user
   systemctl enable docker
   systemctl restart docker
@@ -37,28 +37,42 @@ install_system_packages() {
 
 configure_file_swap() {
   if [ -z "$(swapon --show=TYPE | grep "^file$")" ]; then
-    SWAP_SIZE=2g
-    SWAP_FILEPATH=/swap.img
+    SWAP_FILEPATH=/swapfile
     rm -f ${SWAP_FILEPATH}
-    fallocate -l ${SWAP_SIZE} ${SWAP_FILEPATH} && mkswap ${SWAP_FILEPATH} && swapon ${SWAP_FILEPATH}
-    echo "${SWAP_FILEPATH} swap swap defaults 0 0" >> /etc/fstab
+    dd if=/dev/zero of=${SWAP_FILEPATH} bs=1M count=2048 || error_exit
+    chmod 600 ${SWAP_FILEPATH} || error_exit
+    mkswap ${SWAP_FILEPATH} || error_exit
+    swapon ${SWAP_FILEPATH} || error_exit
+    echo "${SWAP_FILEPATH} swap swap defaults 0 0" >> /etc/fstab || error_exit
   fi
 }
 
 configure_zram_swap_service() {
   if [ -z "$(swapon --show=NAME | grep "^/dev/zram")" ]; then
-    cat << '__EOT__' > /etc/systemd/system/zram-swap.service || error_exit
+    cat << '__EOT__' > ${TSRAIN_BIN_DIR}/zram-swap.sh || error_exit
+#!/bin/sh
+
+ZRAM_PATH=/dev/zram0
+if [ -f "${ZRAM_PATH}" ]; then
+  echo "${ZRAM_PATH} already exists."
+  exit 1
+fi
+
+modprobe zram
+zramctl "${ZRAM_PATH}" --algorithm zstd --size "$(($(grep -Po 'MemTotal:\s*\K\d+' /proc/meminfo)/2))KiB"
+mkswap "${ZRAM_PATH}"
+swapon "${ZRAM_PATH}"
+__EOT__
+  chmod +x ${TSRAIN_BIN_DIR}/zram-swap.sh
+
+    cat << __EOT__ > /etc/systemd/system/zram-swap.service || error_exit
 [Unit]
 Description=zram swap
 After=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStartPre=modprobe zram
-ExecStartPre=sh -c 'echo lz4 > /sys/block/zram0/comp_algorithm'
-ExecStartPre=sh -c 'echo 2048M > /sys/block/zram0/disksize'
-ExecStartPre=mkswap /dev/zram0
-ExecStart=swapon -p 5 /dev/zram0
+ExecStart=${TSRAIN_BIN_DIR}/zram-swap.sh
 RemainAfterExit=yes
 
 [Install]
@@ -70,21 +84,27 @@ __EOT__
 }
 
 configire_tsrain_service() {
-  RAINLOOP_CREDENTOALS_PATH="${TSRAIN_CREDS_DIR}/${RAINLOOP_CREDS_FILE}"
+  RAINLOOP_CREDENTIALS_PATH="${TSRAIN_CREDS_DIR}/${RAINLOOP_CREDS_FILE}"
   RAINLOOP_DEFAULT_ADMIN_PASSWORD=`openssl rand -base64 24`
+
+  TSRAIN_IMAGE_LATEST_VERSION=`curl -s https://registry.hub.docker.com/v2/repositories/spearmint/tsrain/tags | jq -r '.results[].name' | grep -v "^latest$" | sort -r --version-sort | head -1`
+  if [ -z "${TSRAIN_IMAGE_LATEST_VERSION}" ]; then
+    error_exit
+  fi
 
   cat << __EOT__ > ${TSRAIN_ETC_DIR}/.env || error_exit
 TSRAIN_PKI_DIR=${TSRAIN_PKI_DIR}
-RAINLOOP_CREDENTOALS_PATH=${RAINLOOP_CREDENTOALS_PATH}
+RAINLOOP_CREDENTIALS_PATH=${RAINLOOP_CREDENTIALS_PATH}
 RAINLOOP_DEFAULT_ADMIN_PASSWORD=${RAINLOOP_DEFAULT_ADMIN_PASSWORD}
 __EOT__
 
   chmod 600 ${TSRAIN_ETC_DIR}/.env
 
-  cat << '__EOT__' > ${TSRAIN_ETC_DIR}/docker-compose.yml || error_exit
+  export TSRAIN_IMAGE_LATEST_VERSION
+  cat << '__EOT__' | envsubst '$TSRAIN_IMAGE_LATEST_VERSION' > ${TSRAIN_ETC_DIR}/docker-compose.yml || error_exit
 services:
     tsrain:
-        image: spearmint/tsrain:latest
+        image: spearmint/tsrain:${TSRAIN_IMAGE_LATEST_VERSION}
         container_name: tsrain
         restart: always
         mem_limit: 384m
@@ -95,7 +115,7 @@ services:
             - ${TSRAIN_PKI_DIR}/server.key.pem:/usr/local/etc/pki/server.key.pem
             - ${TSRAIN_PKI_DIR}/server.chain.pem:/usr/local/etc/pki/server.chain.pem
             - ${TSRAIN_PKI_DIR}/client.calist.pem:/usr/local/etc/pki/client.calist.pem
-            - ${RAINLOOP_CREDENTOALS_PATH}:/var/opt/testserv/credentials.json
+            - ${RAINLOOP_CREDENTIALS_PATH}:/var/opt/testserv/credentials.json
         ports:
             - "25:25"
             - "80:80"
@@ -126,10 +146,10 @@ __EOT__
 
   systemctl enable tsrain
 
-  if [ ! -f ${RAINLOOP_CREDENTOALS_PATH} ]; then
-    jq --arg password "${TSRAIN_MAILBOX_PASSWORD}" -n '."*".password = $password' > ${RAINLOOP_CREDENTOALS_PATH}
+  if [ ! -f ${RAINLOOP_CREDENTIALS_PATH} ]; then
+    jq --arg password "${TSRAIN_MAILBOX_PASSWORD}" -n '."*".password = $password' > ${RAINLOOP_CREDENTIALS_PATH}
   fi
-  chmod 600 ${RAINLOOP_CREDENTOALS_PATH}
+  chmod 600 ${RAINLOOP_CREDENTIALS_PATH}
 }
 
 issue_certificates() {
