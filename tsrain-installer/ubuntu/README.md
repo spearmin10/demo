@@ -9,7 +9,7 @@ Minimum system requirements:
  - Architecture: x86 64-bits
  - CPU: 1 vCPU
  - RAM: 2 GB
- - Storage Size: 8 GB
+ - Available Disk Space: 1 GB
 
 ### 2. Run install.sh on the instance
 

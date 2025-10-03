@@ -21,19 +21,36 @@ error_exit() {
 }
 
 install_system_packages() {
-  apt-get install -y jq gettext docker openssl curl || error_exit
+  apt-get update
+  apt-get install -y jq gettext openssl || error_exit
+
+  # Uninstall old docker packages
+  for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc
+  do
+    apt-get remove $pkg
+  done
+
+  # Add Docker's official GPG key:
+  apt-get install -y ca-certificates curl || error_exit
+  install -m 0755 -d /etc/apt/keyrings || error_exit
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc || error_exit
+  chmod a+r /etc/apt/keyrings/docker.asc || error_exit
+
+  # Add the repository to Apt sources:
+  echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+    $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+    tee /etc/apt/sources.list.d/docker.list > /dev/null
+  apt-get update
+
+  # Install the latest docker packages
+  apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || error_exit
+
   systemctl enable docker
   systemctl start docker
+  groupadd docker
   usermod -a -G docker $(whoami)
   systemctl restart docker
-
-  if [ ! -f /usr/bin/docker-compose ]; then
-    COMPOSE_LATEST_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r '.tag_name')
-    curl -L "https://github.com/docker/compose/releases/download/${COMPOSE_LATEST_VERSION}/docker-compose-$(uname -s)-$(uname -m)" \
-      -o /usr/local/bin/docker-compose || error_exit
-    chmod +x /usr/local/bin/docker-compose
-    ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
-  fi
 }
 
 configire_tsrain_service() {
@@ -88,8 +105,8 @@ After=docker.service
 [Service]
 Type=oneshot
 WorkingDirectory=${TSRAIN_ETC_DIR}
-ExecStart=/usr/bin/docker-compose up -d
-ExecStop=/usr/bin/docker-compose down
+ExecStart=docker compose up -d
+ExecStop=docker compose down
 RemainAfterExit=yes
 TimeoutStartSec=0
 
