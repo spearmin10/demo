@@ -19,7 +19,7 @@ Minimum system requirements:
 ### 2. Run install.sh on the instance
 
 ```
-curl -s -L https://github.com/spearmin10/demo/blob/main/tsrain-installer/ec2-al2023/install.sh?raw=true | sudo sh
+curl -s -L https://github.com/spearmin10/demo/blob/main/tsrain-installer/ec2-al2023/install.sh?raw=true | sudo bash
 ```
 
 ### 3. Open ports and access the services
