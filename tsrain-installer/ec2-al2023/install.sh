@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 CONTAINER_NAME=tsrain
 TSRAIN_HOME=/opt/tsrain
