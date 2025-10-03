@@ -82,9 +82,6 @@ Notes:
 Managing TSRAIN Services
 ----------
 TSRAIN services are managed using **systemd**.
-There are two main services:
-
-1. **`tsrain`** – controls all standard TSRAIN services (WebMail, SMTP, SMTPS, IMAP4, IMAPS).
 
 #### Start the Services
 ```
