@@ -59,12 +59,16 @@ if [ -f "${ZRAM_PATH}" ]; then
   exit 1
 fi
 
-modprobe zram
-zramctl "${ZRAM_PATH}" --algorithm zstd --size "$(($(grep -Po 'MemTotal:\s*\K\d+' /proc/meminfo)/2))KiB"
+modprobe zram num_devices=1
+if [ ! -f "${ZRAM_PATH}" ]; then
+  echo "${ZRAM_PATH} is not found."
+  exit 1
+fi
+zramctl "${ZRAM_PATH}" --size "$(($(grep -Po 'MemTotal:\s*\K\d+' /proc/meminfo)/2))KiB"
 mkswap "${ZRAM_PATH}"
 swapon "${ZRAM_PATH}"
 __EOT__
-  chmod +x ${TSRAIN_BIN_DIR}/zram-swap.sh
+    chmod +x ${TSRAIN_BIN_DIR}/zram-swap.sh
 
     cat << __EOT__ > /etc/systemd/system/zram-swap.service || error_exit
 [Unit]
@@ -216,17 +220,25 @@ mkdir -p ${TSRAIN_PKI_DIR} || error_exit
 mkdir -p ${TSRAIN_CREDS_DIR} || error_exit
 
 ### Setup System
+echo "Installing system packages..."
 install_system_packages
+
+echo "Configuring swap files..."
 configure_file_swap
+
+echo "Configuring zram swap..."
 configure_zram_swap_service
 
 ### Setup TSRAIN
+echo "Configuring the TSRAIN service..."
 configire_tsrain_service
 
 ### Setup SSL Frontend
+echo "Configuring certificates..."
 issue_certificates
 
 ### Start TSRAIN
+echo "Starting the TSRAIN service..."
 systemctl restart tsrain || error_exit
 
 echo "*** Installation complete, and the TSRAIN service has started. ***"
