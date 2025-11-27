@@ -59,6 +59,7 @@ if [ -f "${ZRAM_PATH}" ]; then
   exit 1
 fi
 
+modprobe -r zram
 modprobe zram num_devices=1
 if [ ! -f "${ZRAM_PATH}" ]; then
   echo "${ZRAM_PATH} is not found."
