@@ -4,7 +4,7 @@ Description: "TSRAIN Email Service"
 Parameters:
     VpcId:
         Type: AWS::EC2::VPC::Id
-        Description: Default VPC ID
+        Description: The VPC ID
 
     KeyName:
         Description: The EC2 Key Pair to allow SSH access to the instance
@@ -21,9 +21,18 @@ Parameters:
         Type: String
         Default: ""
 
+    AllowIndividualPorts:
+        Description: Enable access to individual Email Service ports
+        Type: String
+        AllowedValues:
+            - true
+            - false
+        Default: false
+
 Conditions:
     HasKeyName: !Not [!Equals [!Ref KeyName, ""]]
     HasMyIP: !Not [!Equals [!Ref MyIP, ""]]
+    AllowIndividualPorts: !Equals [!Ref AllowIndividualPorts, false]
 
 Resources:
     EC2:
@@ -40,7 +49,10 @@ Resources:
                   DeviceIndex: "0"
                   GroupSet:
                     - !Ref SecurityGroupTsrainAws443
-                    - !Ref SecurityGroupTsrainAwsOptional
+                    - !If
+                        - AllowIndividualPorts
+                        - !Ref SecurityGroupTsrainAwsOptional
+                        - !Ref AWS::NoValue
                     - !If
                         - HasMyIP
                         - !Ref SecurityGroupSSHFromMyIP
