@@ -5,6 +5,7 @@ Parameters:
     VpcId:
         Type: AWS::EC2::VPC::Id
         Description: The VPC ID
+        AllowedPattern: "vpc-.+"
 
     KeyName:
         Description: The EC2 Key Pair to allow SSH access to the instance
@@ -15,11 +16,13 @@ Parameters:
         Description: TSRAIN Email Service VM instance type
         Type: String
         Default: "t4g.nano"
+        AllowedPattern: ".+"
 
     MyIP:
         Description: IP address allowed to access EC2
         Type: String
         Default: ""
+        AllowedPattern: '^((?:(?:25[0-5]|(?:2[0-4]|1\d|[1-9]|)\d)\.?\b){4})?$'
 
     AllowIndividualPorts:
         Description: Enable access to individual Email Service ports
@@ -81,7 +84,7 @@ Resources:
     SecurityGroupTsrainAwsOptional:
         Type: AWS::EC2::SecurityGroup
         Properties:
-            GroupName: tsrain-optional
+            GroupName: tsrain-individual-services
             GroupDescription: Allow SSH and HTTP access only MyIP
             VpcId: !Ref VpcId
             SecurityGroupIngress:
