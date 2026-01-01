@@ -7,22 +7,11 @@ Parameters:
         Description: The VPC ID
         AllowedPattern: "vpc-.+"
 
-    KeyName:
-        Description: The EC2 Key Pair to allow SSH access to the instance
-        Type: AWS::EC2::KeyPair::KeyName
-        Default: ""
-
     InstanceType:
         Description: TSRAIN Email Service VM instance type
         Type: String
         Default: "t4g.nano"
         AllowedPattern: ".+"
-
-    MyIP:
-        Description: IP address allowed to access EC2
-        Type: String
-        Default: ""
-        AllowedPattern: '^((?:(?:25[0-5]|(?:2[0-4]|1\d|[1-9]|)\d)\.?\b){4})?$'
 
     AllowIndividualPorts:
         Description: Enable access to individual Email Service ports
@@ -33,8 +22,6 @@ Parameters:
         Default: false
 
 Conditions:
-    HasKeyName: !Not [!Equals [!Ref KeyName, ""]]
-    HasMyIP: !Not [!Equals [!Ref MyIP, ""]]
     AllowIndividualPorts: !Equals [!Ref AllowIndividualPorts, false]
 
 Resources:
@@ -42,10 +29,6 @@ Resources:
         Type: AWS::EC2::Instance
         Properties:
             ImageId: ami-0345e79a2cb348c57
-            KeyName: !If
-                - HasKeyName
-                - !Ref KeyName
-                - !Ref AWS::NoValue
             InstanceType: !Ref InstanceType
             NetworkInterfaces:
                 - AssociatePublicIpAddress: "true"
@@ -54,11 +37,7 @@ Resources:
                     - !Ref SecurityGroupTsrainAws443
                     - !If
                         - AllowIndividualPorts
-                        - !Ref SecurityGroupTsrainAwsOptional
-                        - !Ref AWS::NoValue
-                    - !If
-                        - HasMyIP
-                        - !Ref SecurityGroupSSHFromMyIP
+                        - !Ref SecurityGroupTsrainAwsIndividualPorts
                         - !Ref AWS::NoValue
             UserData:
                 !Base64 |
@@ -81,11 +60,11 @@ Resources:
                   CidrIp: 0.0.0.0/0
                   Description: "Run All Services on Port 443"
 
-    SecurityGroupTsrainAwsOptional:
+    SecurityGroupTsrainAwsIndividualPorts:
         Type: AWS::EC2::SecurityGroup
         Properties:
             GroupName: tsrain-individual-services
-            GroupDescription: Allow SSH and HTTP access only MyIP
+            GroupDescription: Individual email service ports
             VpcId: !Ref VpcId
             SecurityGroupIngress:
                 # http
@@ -118,21 +97,6 @@ Resources:
                   ToPort: 993
                   CidrIp: 0.0.0.0/0
                   Description: "IMAP (SSL)"
-
-    SecurityGroupSSHFromMyIP:
-        Type: AWS::EC2::SecurityGroup
-        Condition: HasMyIP
-        Properties:
-            GroupName: ssh-myip
-            GroupDescription: Allow SSH access only from my IP
-            VpcId: !Ref VpcId
-            SecurityGroupIngress:
-                # ssh
-                - IpProtocol: tcp
-                  FromPort: 22
-                  ToPort: 22
-                  CidrIp: !Sub "${MyIP}/32"
-                  Description: "Console"
 
 Outputs:
     EC2PublicIP:
