@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "TSRAIN Email Service"
+
+Parameters:
+    VpcId:
+        Type: AWS::EC2::VPC::Id
+        Description: Default VPC ID
+
+    KeyName:
+        Description: The EC2 Key Pair to allow SSH access to the instance
+        Type: AWS::EC2::KeyPair::KeyName
+        Default: ""
+
+    InstanceType:
+        Description: TSRAIN Email Service VM instance type
+        Type: String
+        Default: "t4g.nano"
+
+    MyIP:
+        Description: IP address allowed to access EC2
+        Type: String
+        Default: ""
+
+Conditions:
+    HasKeyName: !Not [!Equals [!Ref KeyName, ""]]
+    HasMyIP: !Not [!Equals [!Ref MyIP, ""]]
+
+Resources:
+    EC2:
+        Type: AWS::EC2::Instance
+        Properties:
+            ImageId: ami-0345e79a2cb348c57
+            KeyName: !If
+                - HasKeyName
+                - !Ref KeyName
+                - !Ref AWS::NoValue
+            InstanceType: !Ref InstanceType
+            NetworkInterfaces:
+                - AssociatePublicIpAddress: "true"
+                  DeviceIndex: "0"
+                  GroupSet:
+                    - !Ref SecurityGroupTsrainAws443
+                    - !Ref SecurityGroupTsrainAwsOptional
+                    - !If
+                        - HasMyIP
+                        - !Ref SecurityGroupSSHFromMyIP
+                        - !Ref AWS::NoValue
+            UserData:
+                !Base64 |
+                #!/bin/bash
+                curl -s -L https://github.com/spearmin10/demo/blob/main/tsrain-installer/ec2-al2023/install.sh?raw=true | bash
+            Tags:
+                - Key: Name
+                  Value: TSRAIN Email Service
+
+    SecurityGroupTsrainAws443:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupName: tsrain-443
+            GroupDescription: Run All Services on Port 443
+            VpcId: !Ref VpcId
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: 443
+                  ToPort: 443
+                  CidrIp: 0.0.0.0/0
+                  Description: "Run All Services on Port 443"
+
+    SecurityGroupTsrainAwsOptional:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupName: tsrain-optional
+            GroupDescription: Allow SSH and HTTP access only MyIP
+            VpcId: !Ref VpcId
+            SecurityGroupIngress:
+                # http
+                - IpProtocol: tcp
+                  FromPort: 80
+                  ToPort: 80
+                  CidrIp: 0.0.0.0/0
+                  Description: "WebMail Frontend"
+                # smtp
+                - IpProtocol: tcp
+                  FromPort: 25
+                  ToPort: 25
+                  CidrIp: 0.0.0.0/0
+                  Description: "SMTP"
+                # smtps
+                - IpProtocol: tcp
+                  FromPort: 465
+                  ToPort: 465
+                  CidrIp: 0.0.0.0/0
+                  Description: "SMTP (SSL)"
+                # imap
+                - IpProtocol: tcp
+                  FromPort: 143
+                  ToPort: 143
+                  CidrIp: 0.0.0.0/0
+                  Description: "IMAP"
+                # imaps
+                - IpProtocol: tcp
+                  FromPort: 993
+                  ToPort: 993
+                  CidrIp: 0.0.0.0/0
+                  Description: "IMAP (SSL)"
+
+    SecurityGroupSSHFromMyIP:
+        Type: AWS::EC2::SecurityGroup
+        Condition: HasMyIP
+        Properties:
+            GroupName: ssh-myip
+            GroupDescription: Allow SSH access only from my IP
+            VpcId: !Ref VpcId
+            SecurityGroupIngress:
+                # ssh
+                - IpProtocol: tcp
+                  FromPort: 22
+                  ToPort: 22
+                  CidrIp: !Sub "${MyIP}/32"
+                  Description: "Console"
+
+Outputs:
+    EC2PublicIP:
+        Value: !GetAtt EC2.PublicIp
+        Description: Public IP of EC2 instance
