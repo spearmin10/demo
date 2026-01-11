@@ -60,15 +60,21 @@ if [ -e "${ZRAM_PATH}" ]; then
   exit 1
 fi
 
+echo "modprobe -r zram" >> /dev/shm/log.log
 modprobe -r zram
+echo "modprobe zram num_devices=1" >> /dev/shm/log.log
 modprobe zram num_devices=1
 if [ ! -e "${ZRAM_PATH}" ]; then
   echo "${ZRAM_PATH} is not found."
   exit 1
 fi
+echo "zramctl" >> /dev/shm/log.log
 zramctl "${ZRAM_PATH}" --size "$(($(grep -Po 'MemTotal:\s*\K\d+' /proc/meminfo)/2))KiB"
+echo "mkswap" >> /dev/shm/log.log
 mkswap "${ZRAM_PATH}"
+echo "swapon" >> /dev/shm/log.log
 swapon "${ZRAM_PATH}"
+echo "done" >> /dev/shm/log.log
 __EOT__
     chmod +x ${MOCKY_BIN_DIR}/zram-swap.sh
 
@@ -158,8 +164,8 @@ configure_mocky_dns() {
     -H "Authorization: Token ${DESEC_TOKEN}" | jq -r '.[].name'`
   if [ -z "${name}" ]; then
     cat << __EOT__ | curl https://desec.io/api/v1/domains/${MOCKY_DOMAIN}/rrsets/ \
-     --header "Authorization: Token ${DESEC_TOKEN}" \
-     --header "Content-Type: application/json" --data @- | jq .
+     -H "Authorization: Token ${DESEC_TOKEN}" \
+     -H "Content-Type: application/json" --data @- | jq .
 {
   "subname": "${MOCKY_SUBDOMAIN}",
   "type": "A",
@@ -169,8 +175,8 @@ configure_mocky_dns() {
 __EOT__
   else
     cat << __EOT__ | curl -X PATCH https://desec.io/api/v1/domains/${MOCKY_DOMAIN}/rrsets/mocky/A/ \
-     --header "Authorization: Token ${DESEC_TOKEN}" \
-     --header "Content-Type: application/json" --data @- | jq .
+     -H "Authorization: Token ${DESEC_TOKEN}" \
+     -H "Content-Type: application/json" --data @- | jq .
 {
   "records": ["${public_ip}"]
 }
