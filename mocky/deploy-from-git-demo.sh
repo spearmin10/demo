@@ -2,7 +2,7 @@
 
 usage_exit() {
   echo "Usage: $0 [-p [password]] [-0 [port0]] [-1 [port1]] [-2 [port2]] [tenant] [admock-url] [xmocky-url]" 1>&2
-  echo "  e.g. $0 -p password -0 443 -1 6361 -2 3001 se-demo https://github.com/spearmin10/demo/raw/main/mocky/admock-ldif.zip https://github.com/spearmin10/demo/raw/main/mocky/xmocky.zip"
+  echo "  e.g. $0 -p password -0 443 -1 6361 -2 3001 se-demo https://github.com/spearmin10/demo/raw/main/mocky/data/admock-ldif.zip https://github.com/spearmin10/demo/raw/main/mocky/data/xmocky.zip"
   exit 1
 }
 
