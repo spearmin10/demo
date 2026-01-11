@@ -3,7 +3,7 @@
 MOCKY_HOME=/opt/mocky
 MOCKY_ETC_DIR=${MOCKY_HOME}/system/etc
 MOCKY_BIN_DIR=${MOCKY_HOME}/system/bin
-MOCKY_RAW_URL=https://github.com/spearmin10/demo/raw/main/mocky
+MOCKY_RAW_URL=https://github.com/spearmin10/demo/raw/main/mocky/mocky
 MOCKY_CONTENT_PASSWORD=
 MOCKY_FQDN=
 MOCKY_SUBDOMAIN=
