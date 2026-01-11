@@ -23,9 +23,9 @@ error_exit() {
 install_system_packages() {
   dnf install -y jq gettext docker || error_exit
   systemctl enable docker
-  systemctl start docker
+  systemctl start --no-block docker
   usermod -a -G docker ec2-user
-  systemctl restart docker
+  systemctl restart --no-block docker
 
   if [ ! -f /usr/bin/docker-compose ]; then
     COMPOSE_LATEST_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r '.tag_name')
@@ -85,7 +85,7 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 __EOT__
     systemctl enable zram-swap
-    systemctl start zram-swap
+    systemctl start --no-block zram-swap
   fi
 }
 
@@ -240,7 +240,7 @@ issue_certificates
 
 ### Start TSRAIN
 echo "Starting the TSRAIN service..."
-systemctl restart tsrain || error_exit
+systemctl restart --no-block tsrain || error_exit
 
 echo "*** Installation complete, and the TSRAIN service has started. ***"
 
