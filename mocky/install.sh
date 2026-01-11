@@ -51,7 +51,7 @@ configure_file_swap() {
 
 configure_zram_swap_service() {
   if [ -z "$(swapon --show=NAME | grep "^/dev/zram")" ]; then
-    cat << '__EOT__' > ${TSRAIN_BIN_DIR}/zram-swap.sh || error_exit
+    cat << '__EOT__' > ${MOCKY_BIN_DIR}/zram-swap.sh || error_exit
 #!/bin/sh
 
 ZRAM_PATH=/dev/zram0
@@ -70,7 +70,7 @@ zramctl "${ZRAM_PATH}" --size "$(($(grep -Po 'MemTotal:\s*\K\d+' /proc/meminfo)/
 mkswap "${ZRAM_PATH}"
 swapon "${ZRAM_PATH}"
 __EOT__
-    chmod +x ${TSRAIN_BIN_DIR}/zram-swap.sh
+    chmod +x ${MOCKY_BIN_DIR}/zram-swap.sh
 
     cat << __EOT__ > /etc/systemd/system/zram-swap.service || error_exit
 [Unit]
@@ -79,7 +79,7 @@ After=multi-user.target
 
 [Service]
 Type=oneshot
-ExecStart=${TSRAIN_BIN_DIR}/zram-swap.sh
+ExecStart=${MOCKY_BIN_DIR}/zram-swap.sh
 RemainAfterExit=yes
 
 [Install]
