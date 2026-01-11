@@ -24,9 +24,9 @@ error_exit() {
 install_system_packages() {
   dnf install -y jq yq gettext docker p7zip cronie-noanacron || error_exit
   systemctl enable docker
-  systemctl start docker
+  systemctl start --no-block docker
   usermod -a -G docker ec2-user
-  systemctl restart docker
+  systemctl restart --no-block docker
 
   if [ ! -f /usr/bin/docker-compose ]; then
     COMPOSE_LATEST_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r '.tag_name')
@@ -60,21 +60,15 @@ if [ -e "${ZRAM_PATH}" ]; then
   exit 1
 fi
 
-echo "modprobe -r zram" >> /dev/shm/log.log
 modprobe -r zram
-echo "modprobe zram num_devices=1" >> /dev/shm/log.log
 modprobe zram num_devices=1
 if [ ! -e "${ZRAM_PATH}" ]; then
   echo "${ZRAM_PATH} is not found."
   exit 1
 fi
-echo "zramctl" >> /dev/shm/log.log
 zramctl "${ZRAM_PATH}" --size "$(($(grep -Po 'MemTotal:\s*\K\d+' /proc/meminfo)/2))KiB"
-echo "mkswap" >> /dev/shm/log.log
 mkswap "${ZRAM_PATH}"
-echo "swapon" >> /dev/shm/log.log
 swapon "${ZRAM_PATH}"
-echo "done" >> /dev/shm/log.log
 __EOT__
     chmod +x ${MOCKY_BIN_DIR}/zram-swap.sh
 
@@ -92,7 +86,7 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 __EOT__
     systemctl enable zram-swap
-    systemctl start zram-swap
+    systemctl start --no-block zram-swap
   fi
 }
 
@@ -144,7 +138,7 @@ __EOT__
 
   (crontab -l 2> /dev/null; echo "0 0 * * * systemctl restart mocky") | sort | uniq | crontab -
   systemctl enable crond
-  systemctl restart crond
+  systemctl restart --no-block crond
 }
 
 install_system_packages_for_certs() {
@@ -217,7 +211,7 @@ configure_mocky_certs() {
   
   (crontab -l 2> /dev/null; echo '0 23 * * * certbot renew --pre-hook "systemctl stop mocky" --post-hook "systemctl start mocky"') | sort | uniq | crontab -
   systemctl enable crond
-  systemctl restart crond
+  systemctl restart --no-block crond
 }
 
 
@@ -291,5 +285,4 @@ fi
 
 ### Start mocky
 echo "Starting the mocky service..."
-systemctl restart mocky || error_exit
-
+systemctl restart --no-block mocky || error_exit
