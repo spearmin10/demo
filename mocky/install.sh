@@ -4,15 +4,15 @@ MOCKY_HOME=/opt/mocky
 MOCKY_ETC_DIR=${MOCKY_HOME}/system/etc
 MOCKY_BIN_DIR=${MOCKY_HOME}/system/bin
 MOCKY_RAW_URL=https://github.com/spearmin10/demo/raw/main/mocky/mocky
+MOCKY_DOMAIN=cortex.f5.si
+MOCKY_SUBDOMAIN=mocky
+MOCKY_FQDN=${MOCKY_SUBDOMAIN}.${MOCKY_DOMAIN}
 MOCKY_CONTENT_PASSWORD=
-MOCKY_FQDN=
-MOCKY_SUBDOMAIN=
-MOCKY_DOMAIN=
 LETSENCRYPT_USER=
-DESEC_TOKEN=
+DDNSNOW_TOKEN=
 
 usage_exit() {
-  echo "Usage: $0 -p <content_password> [-u <letsencrypt_user> -t <desec_token> -f <mocky_fqdn>] [-h]" 1>&2
+  echo "Usage: $0 -p <content_password> [-u <letsencrypt_user> -t <ddnsnow_token> [-s <mocky_subdomain>]] [-h]" 1>&2
   exit 1
 }
 
@@ -146,47 +146,54 @@ install_system_packages_for_certs() {
 }
 
 configure_mocky_dns() {
-  #aws_token=`curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
-  #public_ip=`curl -s -H "X-aws-ec2-metadata-token: $aws_token" http://169.254.169.254/latest/meta-data/public-ipv4`
-  public_ip=`curl https://ipconfig.io/`
-  if [ -z "${public_ip}" ]; then
-    echo "Unable to get the public IP." 1>&2
-    error_exit
-  fi
+  cat << __EOS__ > ${MOCKY_BIN_DIR}/dns-update.sh || error_exit
+#!/bin/sh
 
-  name=`curl https://desec.io/api/v1/domains/${MOCKY_DOMAIN}/rrsets/?subname=${MOCKY_SUBDOMAIN} \
-    -H "Authorization: Token ${DESEC_TOKEN}" | jq -r '.[].name'`
-  if [ -z "${name}" ]; then
-    cat << __EOT__ | curl https://desec.io/api/v1/domains/${MOCKY_DOMAIN}/rrsets/ \
-     -H "Authorization: Token ${DESEC_TOKEN}" \
-     -H "Content-Type: application/json" --data @- | jq .
-{
-  "subname": "${MOCKY_SUBDOMAIN}",
-  "type": "A",
-  "ttl": 3600,
-  "records": ["${public_ip}"]
-}
-__EOT__
-  else
-    cat << __EOT__ | curl -X PATCH https://desec.io/api/v1/domains/${MOCKY_DOMAIN}/rrsets/mocky/A/ \
-     -H "Authorization: Token ${DESEC_TOKEN}" \
-     -H "Content-Type: application/json" --data @- | jq .
-{
-  "records": ["${public_ip}"]
-}
-__EOT__
+#aws_token=\`curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"\`
+#public_ip=\`curl -s -H "X-aws-ec2-metadata-token: $aws_token" http://169.254.169.254/latest/meta-data/public-ipv4\`
+
+public_ip=\`curl https://ipconfig.io/\`
+if [ -z "\${public_ip}" ]; then
+  echo "Unable to get the public IP." 1>&2
+  exit 1
+fi
+
+result=\`curl -s "https://f5.si/update.php?format=json&domain=${MOCKY_SUBDOMAIN}.cortex&password=${DDNSNOW_TOKEN}" | jq -r .result\`
+if [ "\${result}" != "OK" ]; then
+  echo "Unable to update the DNS." 1>&2
+  exit 1
+fi
+
+# Wait for DNS propagation
+while true; do
+  resolved_ip=\`dig +short "${MOCKY_FQDN}" | tail -n1\`
+  if [ "\${resolved_ip}" == "\${public_ip}" ]; then
+    echo "DNS resolved correctly: \${resolved_ip}"
+    break
   fi
+  echo "Current: \${resolved_ip:-<not resolved>} (waiting...)"
+  sleep 5
+done
+
+__EOS__
   
-  # Wait for DNS propagation
-  while true; do
-    resolved_ip=`dig +short "$MOCKY_FQDN" | tail -n1`
-    if [ "${resolved_ip}" == "${public_ip}" ]; then
-      echo "DNS resolved correctly: $resolved_ip"
-      break
-    fi
-    echo "Current: ${resolved_ip:-<not resolved>} (waiting...)"
-    sleep 5
-  done
+  chmod +x ${MOCKY_BIN_DIR}/dns-update.sh
+
+  cat << __EOT__ > /etc/systemd/system/dns-update.service || error_exit
+[Unit]
+Description=DNS update
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=${MOCKY_BIN_DIR}/dns-update.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+__EOT__
+  systemctl enable dns-update
+  ${MOCKY_BIN_DIR}/dns-update.sh || error_exit
 }
 
 configure_mocky_certs() {
@@ -221,16 +228,16 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 
-while getopts p:l:t:f:h OPT
+while getopts p:l:t:s:h OPT
 do
   case $OPT in
     p)  MOCKY_CONTENT_PASSWORD=$OPTARG
         ;;
     l)  LETSENCRYPT_USER=$OPTARG
         ;;
-    t)  DESEC_TOKEN=$OPTARG
+    t)  DDNSNOW_TOKEN=$OPTARG
         ;;
-    f)  MOCKY_FQDN=$OPTARG
+    s)  MOCKY_SUBDOMAIN=$OPTARG
         ;;
     h)  usage_exit
         ;;
@@ -243,10 +250,9 @@ shift  $(($OPTIND - 1))
 if [ -z "${MOCKY_CONTENT_PASSWORD}" ]; then
   usage_exit
 fi
-if [ ! -z "${LETSENCRYPT_USER}" -a ! -z "${DESEC_TOKEN}" -a ! -z "${MOCKY_FQDN}" ]; then
-  MOCKY_SUBDOMAIN=`echo "$MOCKY_FQDN" | cut -d. -f1`
-  MOCKY_DOMAIN=`echo "$MOCKY_FQDN" | cut -d. -f2-`
-elif [ -z "${LETSENCRYPT_USER}" -a -z "${DESEC_TOKEN}" -a -z "${MOCKY_FQDN}" ]; then
+if [ ! -z "${LETSENCRYPT_USER}" -a ! -z "${DDNSNOW_TOKEN}" -a ! -z "${MOCKY_SUBDOMAIN}" ]; then
+  MOCKY_FQDN=${MOCKY_SUBDOMAIN}.${MOCKY_DOMAIN}
+elif [ -z "${LETSENCRYPT_USER}" -a -z "${DDNSNOW_TOKEN}" -a -z "${MOCKY_FQDN}" ]; then
   :
 else
   usage_exit
@@ -272,7 +278,7 @@ install_mocky
 echo "Configuring mocky..."
 configire_mocky
 
-if [ ! -z "${MOCKY_FQDN}" ]; then
+if [ ! -z "${DDNSNOW_TOKEN}" ]; then
   echo "Installing system packages..."
   install_system_packages_for_certs
 
