@@ -46,27 +46,27 @@ XMOCKY_URL=$3
 MOCKY_HOME=/opt/mocky
 TENANT_HOME="${MOCKY_HOME}/tenants/${TENANT}"
 
-mkdir -p "${HOME_DIR}/admock/bin"
-mkdir -p "${HOME_DIR}/admock/etc"
-mkdir -p "${HOME_DIR}/xmocky/bin"
-mkdir -p "${HOME_DIR}/xmocky/xmocky"
+mkdir -p "${TENANT_HOME}/admock/bin"
+mkdir -p "${TENANT_HOME}/admock/etc"
+mkdir -p "${TENANT_HOME}/xmocky/bin"
+mkdir -p "${TENANT_HOME}/xmocky/xmocky"
 
-cp -f admock.py "${HOME_DIR}/admock/bin/"
-cp -f admock.sh "${HOME_DIR}/admock/bin/"
-cp -f xmocky.sh "${HOME_DIR}/xmocky/bin/"
+cp -f admock.py "${TENANT_HOME}/admock/bin/"
+cp -f admock.sh "${TENANT_HOME}/admock/bin/"
+cp -f xmocky.sh "${TENANT_HOME}/xmocky/bin/"
 
 curl -L -o /dev/shm/admock-download.zip "$ADMOCK_URL"
 rm -rf /dev/shm/admock-download.tmp
 7za x -aoa -p"${ZIP_PASSWORD}" -o/dev/shm/admock-download.tmp /dev/shm/admock-download.zip
 for file in "/dev/shm/admock-download.tmp/*.ldif"
 do
-  cp -f $file "${HOME_DIR}/admock/etc/admock.ldif"
+  cp -f $file "${TENANT_HOME}/admock/etc/admock.ldif"
 done
 rm -rf /dev/shm/admock-download.tmp
 rm -rf /dev/shm/admock-download.zip
 
 curl -L -o /dev/shm/xmocky-download.zip "$XMOCKY_URL"
-7za x -aoa -p"${ZIP_PASSWORD}" -o"${HOME_DIR}/xmocky/xmocky" /dev/shm/xmocky-download.zip
+7za x -aoa -p"${ZIP_PASSWORD}" -o"${TENANT_HOME}/xmocky/xmocky" /dev/shm/xmocky-download.zip
 rm -rf /dev/shm/xmocky-download.zip
 
 cat << __EOT__ >> /dev/shm/docker-compose-tenant.yml
