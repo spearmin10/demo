@@ -55,14 +55,14 @@ configure_zram_swap_service() {
 #!/bin/sh
 
 ZRAM_PATH=/dev/zram0
-if [ -f "${ZRAM_PATH}" ]; then
+if [ -e "${ZRAM_PATH}" ]; then
   echo "${ZRAM_PATH} already exists."
   exit 1
 fi
 
 modprobe -r zram
 modprobe zram num_devices=1
-if [ ! -f "${ZRAM_PATH}" ]; then
+if [ ! -e "${ZRAM_PATH}" ]; then
   echo "${ZRAM_PATH} is not found."
   exit 1
 fi
