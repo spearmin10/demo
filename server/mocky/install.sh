@@ -3,16 +3,16 @@
 MOCKY_HOME=/opt/mocky
 MOCKY_ETC_DIR=${MOCKY_HOME}/system/etc
 MOCKY_BIN_DIR=${MOCKY_HOME}/system/bin
-MOCKY_RAW_URL=https://github.com/spearmin10/demo/raw/main/mocky/mocky
+MOCKY_RAW_URL=https://github.com/spearmin10/demo/raw/main/server/mocky/mocky
 MOCKY_DOMAIN=cortex.f5.si
 MOCKY_SUBDOMAIN=mocky
 MOCKY_FQDN=${MOCKY_SUBDOMAIN}.${MOCKY_DOMAIN}
 MOCKY_CONTENT_PASSWORD=
 LETSENCRYPT_USER=
-DDNSNOW_TOKEN=
+DDNS_TOKEN=
 
 usage_exit() {
-  echo "Usage: $0 -p <content_password> [-u <letsencrypt_user> -t <ddnsnow_token> [-s <mocky_subdomain>]] [-h]" 1>&2
+  echo "Usage: $0 -p <content_password> -l <letsencrypt_user> [-h <host_fqdn> [-t <ddns_token>]]" 1>&2
   exit 1
 }
 
@@ -145,12 +145,9 @@ install_system_packages_for_certs() {
   dnf install -y jq yq python3.13 augeas-libs pip || error_exit
 }
 
-configure_mocky_dns() {
+configure_mocky_ddns_ddnsnow() {
   cat << __EOS__ > ${MOCKY_BIN_DIR}/dns-update.sh || error_exit
 #!/bin/sh
-
-#aws_token=\`curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"\`
-#public_ip=\`curl -s -H "X-aws-ec2-metadata-token: $aws_token" http://169.254.169.254/latest/meta-data/public-ipv4\`
 
 public_ip=\`curl https://ipconfig.io/\`
 if [ -z "\${public_ip}" ]; then
@@ -158,7 +155,7 @@ if [ -z "\${public_ip}" ]; then
   exit 1
 fi
 
-result=\`curl -s "https://f5.si/update.php?format=json&domain=${MOCKY_SUBDOMAIN}.cortex&password=${DDNSNOW_TOKEN}" | jq -r .result\`
+result=\`curl -s "https://f5.si/update.php?format=json&domain=${MOCKY_SUBDOMAIN}.cortex&password=${DDNS_TOKEN}" | jq -r .result\`
 if [ "\${result}" != "OK" ]; then
   echo "Unable to update the DNS." 1>&2
   exit 1
@@ -201,6 +198,24 @@ configure_mocky_certs() {
   /opt/certbot/bin/pip install --upgrade pip || error_exit
   /opt/certbot/bin/pip install certbot || error_exit
   ln -s /opt/certbot/bin/certbot /usr/bin/certbot
+
+  public_ip=`curl https://ipconfig.io/`
+  if [ -z "${public_ip}" ]; then
+    echo "Unable to get the public IP." 1>&2
+    error_exit
+  fi
+
+  # Wait for DNS propagation
+  while true; do
+    resolved_ip=`dig +short "${MOCKY_FQDN}" | tail -n1`
+    if [ "${resolved_ip}" == "${public_ip}" ]; then
+      echo "DNS resolved correctly: ${resolved_ip}"
+      break
+    fi
+    echo "Current: ${resolved_ip:-<not resolved>} (waiting...)"
+    sleep 5
+  done
+
   certbot certonly --standalone --test-cert --agree-tos --dry-run -m ${LETSENCRYPT_USER} -d ${MOCKY_FQDN} || error_exit
   certbot certonly -n --standalone --agree-tos -m ${LETSENCRYPT_USER} -d ${MOCKY_FQDN} || error_exit
 
@@ -228,18 +243,16 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 
-while getopts p:l:t:s:h OPT
+while getopts p:l:h:t: OPT
 do
   case $OPT in
     p)  MOCKY_CONTENT_PASSWORD=$OPTARG
         ;;
     l)  LETSENCRYPT_USER=$OPTARG
         ;;
-    t)  DDNSNOW_TOKEN=$OPTARG
+    h)  MOCKY_FQDN=$OPTARG
         ;;
-    s)  MOCKY_SUBDOMAIN=$OPTARG
-        ;;
-    h)  usage_exit
+    t)  DDNS_TOKEN=$OPTARG
         ;;
     \?) usage_exit
         ;;
@@ -250,12 +263,16 @@ shift  $(($OPTIND - 1))
 if [ -z "${MOCKY_CONTENT_PASSWORD}" ]; then
   usage_exit
 fi
-if [ ! -z "${LETSENCRYPT_USER}" -a ! -z "${DDNSNOW_TOKEN}" -a ! -z "${MOCKY_SUBDOMAIN}" ]; then
-  MOCKY_FQDN=${MOCKY_SUBDOMAIN}.${MOCKY_DOMAIN}
-elif [ -z "${LETSENCRYPT_USER}" -a -z "${DDNSNOW_TOKEN}" -a -z "${MOCKY_FQDN}" ]; then
-  :
-else
+
+MOCKY_SUBDOMAIN=`echo "${MOCKY_FQDN}" | cut -d'.' -f1`
+MOCKY_DOMAIN=`echo "${MOCKY_FQDN}" | cut -d'.' -f2-`
+
+if [ -z "${LETSENCRYPT_USER}" -o -z "${MOCKY_DOMAIN}" -a -z "${MOCKY_SUBDOMAIN}" ]; then
   usage_exit
+fi
+if [ "${MOCKY_DOMAIN}" == "cortex.f5.si" -a -z "${DDNS_TOKEN}" ]; then
+  echo "DDNS NOW token is required for ${MOCKY_DOMAIN}" 1>&2
+  error_exit
 fi
 
 mkdir -p ${MOCKY_BIN_DIR} || error_exit
@@ -278,12 +295,12 @@ install_mocky
 echo "Configuring mocky..."
 configire_mocky
 
-if [ ! -z "${DDNSNOW_TOKEN}" ]; then
+if [ ! -z "${MOCKY_FQDN}" ]; then
   echo "Installing system packages..."
   install_system_packages_for_certs
 
   echo "Configuring DNS records..."
-  configure_mocky_dns
+  configure_mocky_ddns_ddnsnow
 
   echo "Issuing server certificates..."
   configure_mocky_certs
