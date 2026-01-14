@@ -300,8 +300,9 @@ if [ ! -z "${MOCKY_FQDN}" ]; then
   install_system_packages_for_certs
 
   echo "Configuring DNS records..."
-  configure_mocky_ddns_ddnsnow
-
+  if [ "${MOCKY_DOMAIN}" == "cortex.f5.si" ]; then
+    configure_mocky_ddns_ddnsnow
+  fi
   echo "Issuing server certificates..."
   configure_mocky_certs
 fi
