@@ -299,8 +299,8 @@ if [ ! -z "${MOCKY_FQDN}" ]; then
   echo "Installing system packages..."
   install_system_packages_for_certs
 
-  echo "Configuring DNS records..."
   if [ "${MOCKY_DOMAIN}" == "cortex.f5.si" ]; then
+    echo "Configuring DNS records..."
     configure_mocky_ddns_ddnsnow
   fi
   echo "Issuing server certificates..."
